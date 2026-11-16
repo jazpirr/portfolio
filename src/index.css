@@ -1,0 +1,423 @@
+@import 'tailwindcss';
+
+/* Self-hosted VT323 (OFL), scaled up to sit level with the body font.
+   Clear, unambiguous digits — 5 vs S, 6 vs 8. */
+@font-face {
+  font-family: 'VT323 Pixel';
+  src: url('/fonts/vt323-latin.woff2') format('woff2');
+  font-display: swap;
+  size-adjust: 128%;
+}
+
+/* ── Palettes ───────────────────────────────────────────────
+   dark  = "Night" (default) — deep navy + cyan
+   light = "Day"             — pale sky + cobalt                */
+
+:root,
+:root[data-theme='dark'] {
+  --bg: #070d24;
+  --surface: #0f1a3d;
+  --surface-2: #172a5c;
+  --ink: #e8f1ff;
+  --muted: #9fb6e3;
+  --line: #6f9cff;
+  --shadow: #2448c9;
+  --accent: #5cd2ff;
+  --accent-2: #8e9bff;
+  --ok: #4be3c4;
+  --soft: #b8dcff;
+  --yellow: #ffd447;
+  --pink: #ff6fa8;
+  --orange: #ff9a4d;
+  --purple: #b18cff;
+  --on-accent: #070d24;
+  --scan: rgba(0, 0, 0, 0.12);
+  --star: #a6c8ff;
+
+  --sp-k: #070d24;
+  --sp-y: #5cd2ff;
+  --sp-w: #ffffff;
+  --sp-n: #2448c9;
+  --sp-a: #5cd2ff;
+  --sp-c: #8e9bff;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: #e3edff;
+  --surface: #f6f9ff;
+  --surface-2: #d2e1ff;
+  --ink: #0a1a44;
+  --muted: #3a5290;
+  --line: #0a1a44;
+  --shadow: #3a6df0;
+  --accent: #1d5ce0;
+  --accent-2: #4b4fd8;
+  --ok: #0b7f6b;
+  --soft: #1d5ce0;
+  --yellow: #9a6700;
+  --pink: #c4245f;
+  --orange: #c2410c;
+  --purple: #6d3fd6;
+  --on-accent: #ffffff;
+  --scan: rgba(10, 26, 68, 0.035);
+  --star: #3a6df0;
+
+  --sp-k: #0a1a44;
+  --sp-y: #1d5ce0;
+  --sp-w: #ffffff;
+  --sp-n: #0a1a44;
+  --sp-a: #1d5ce0;
+  --sp-c: #4b4fd8;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-ok: var(--ok);
+  --color-soft: var(--soft);
+  --color-yellow: var(--yellow);
+  --color-pink: var(--pink);
+  --color-orange: var(--orange);
+  --color-purple: var(--purple);
+  --color-on-accent: var(--on-accent);
+  --font-pixel: 'Press Start 2P', ui-monospace, monospace; /* big headings only */
+  --font-label: 'VT323 Pixel', 'JetBrains Mono', ui-monospace, monospace; /* labels, buttons, numbers */
+  --font-sans: 'JetBrains Mono', ui-monospace, monospace; /* body text */
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+
+html {
+  overflow-x: clip; /* slide-in reveals must never cause sideways scroll */
+  scroll-behavior: smooth;
+  scroll-padding-top: 4.75rem;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.65;
+  overflow-x: clip;
+}
+
+.font-pixel {
+  line-height: 1.5;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:focus-visible {
+  outline: 3px dashed var(--accent);
+  outline-offset: 6px;
+}
+
+svg.sprite {
+  image-rendering: pixelated;
+}
+
+/* ── CRT overlay (static — no per-frame repaint) ─────────── */
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 80;
+  background: repeating-linear-gradient(to bottom, transparent 0 3px, var(--scan) 3px 4px);
+}
+
+/* ── Pixel boxes ──────────────────────────────────────────── */
+/* In the components layer so Tailwind utilities (mt-8 etc.) still win. */
+
+@layer components {
+  .px-box {
+    --b: var(--line);
+    --sh: var(--shadow);
+    --o: 8px;
+    position: relative;
+    margin: 4px;
+    background: var(--surface);
+    box-shadow:
+      0 -4px 0 0 var(--b),
+      0 4px 0 0 var(--b),
+      -4px 0 0 0 var(--b),
+      4px 0 0 0 var(--b),
+      var(--o) var(--o) 0 0 var(--sh);
+    transition: transform 0.15s steps(2);
+  }
+
+  .px-box.lift:hover,
+  .px-box.lift:focus-within {
+    transform: translate(-4px, -4px);
+    --o: 12px;
+  }
+
+  .px-thin {
+    --b: var(--line);
+    margin: 2px;
+    box-shadow:
+      0 -2px 0 0 var(--b),
+      0 2px 0 0 var(--b),
+      -2px 0 0 0 var(--b),
+      2px 0 0 0 var(--b);
+  }
+
+  .px-btn {
+    --btn: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 4px;
+    padding: 0.7rem 1.2rem;
+    font-family: var(--font-label);
+    font-size: 1.05rem;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--on-accent);
+    background: var(--btn);
+    box-shadow:
+      0 -4px 0 0 var(--line),
+      0 4px 0 0 var(--line),
+      -4px 0 0 0 var(--line),
+      4px 0 0 0 var(--line),
+      inset -4px -4px 0 0 rgba(0, 0, 0, 0.25),
+      inset 4px 4px 0 0 rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    transition: transform 0.1s steps(1);
+  }
+
+  .px-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .px-btn:active {
+    transform: translateY(2px);
+  }
+
+  .px-btn.ghost {
+    --btn: var(--surface);
+    color: var(--ink);
+  }
+
+  .px-btn-sm {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.85rem;
+  }
+
+  .label {
+    font-family: var(--font-label);
+    font-size: 0.875rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+.title-shadow {
+  text-shadow: 4px 4px 0 var(--shadow);
+}
+
+/* Two-tone shadow for the hero name */
+.title-shadow-pop {
+  text-shadow:
+    3px 3px 0 var(--pink),
+    6px 6px 0 var(--shadow);
+}
+
+.cursor-arrow::before {
+  content: '▶';
+  display: inline-block;
+  width: 1.1em;
+  color: var(--accent);
+  opacity: 0;
+}
+
+.cursor-arrow:hover::before,
+.cursor-arrow[aria-current='true']::before {
+  opacity: 1;
+}
+
+/* ── Animations (all transform/opacity only) ─────────────── */
+
+.blink {
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.bob {
+  animation: bob 0.9s steps(2) infinite;
+}
+@keyframes bob {
+  50% { transform: translateY(-5px); }
+}
+
+.fall {
+  animation: fall linear forwards;
+  will-change: transform;
+}
+@keyframes fall {
+  from { transform: translateY(-15vh); }
+  to { transform: translateY(115vh); }
+}
+
+.marquee {
+  animation: marquee 45s linear infinite;
+  will-change: transform;
+}
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.5s steps(5),
+    transform 0.5s steps(5);
+}
+.reveal.from-left {
+  transform: translateX(-48px);
+}
+.reveal.from-right {
+  transform: translateX(48px);
+}
+.reveal.pop {
+  transform: scale(0.85);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Section titles wipe in like a pixel curtain */
+.wipe {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.6s steps(8);
+}
+.in .wipe {
+  clip-path: inset(0 0 0 0);
+}
+
+/* 3D tilt toward the mouse (vars set by useTilt) */
+.tilt {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+}
+.reveal.tilt:not(.in) {
+  transform: translateY(28px);
+}
+.reveal.tilt.in {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition:
+    opacity 0.5s steps(5),
+    transform 0.12s linear;
+}
+.px-box.lift.tilt:hover,
+.px-box.lift.tilt:focus-within {
+  transform: perspective(900px) translate(-4px, -4px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+}
+
+/* Pixel-art cursors */
+html {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='%23070d24' d='M0 0h1v1H0zM0 1h2v1H0zM0 2h3v1H0zM0 3h4v1H0zM0 4h5v1H0zM0 5h6v1H0zM0 6h7v1H0zM0 7h4v1H0zM0 8h2v1H0zM4 7h2v2H4zM0 9h1v1H0zM5 9h2v2H5z'/%3E%3Cpath fill='%235cd2ff' d='M1 2h1v5H1zM2 3h1v4H2zM3 4h1v3H3zM4 5h1v2H4zM5 6h1v1H5z'/%3E%3Cpath fill='%23ffffff' d='M1 1h1v1H1z'/%3E%3C/svg%3E")
+      0 0,
+    auto;
+}
+a,
+button,
+summary,
+[role='button'] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='%23070d24' d='M3 0h2v1H3zM2 1h1v5H2zM5 1h1v3H5zM6 3h4v1H6zM10 4h1v5h-1zM0 5h2v1H0zM0 6h1v2H0zM1 8h1v1H1zM2 9h1v1H2zM3 10h6v1H3zM9 9h1v1H9z'/%3E%3Cpath fill='%23ffd447' d='M3 1h2v5H3zM5 4h5v5H5zM1 6h2v2H1zM2 8h3v1H2zM3 9h6v1H3zM3 6h2v2H3zM2 7h1v1H2z'/%3E%3C/svg%3E")
+      6 1,
+    pointer;
+}
+
+.boot-out {
+  animation: bootout 0.45s steps(5) forwards;
+}
+@keyframes bootout {
+  to { clip-path: inset(50% 0 50% 0); }
+}
+
+.eq {
+  transform-origin: bottom;
+  animation: eq 0.9s steps(3) infinite;
+}
+@keyframes eq {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+.toast-in {
+  animation: toastin 0.35s steps(4);
+}
+@keyframes toastin {
+  from { transform: translateY(120%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .wipe {
+    clip-path: none;
+  }
+}
+
+/* ── Stage-transition curtain (Warp) ───────────────────────── */
+.warp-col {
+  transform: scaleY(0);
+}
+.warp-close {
+  transform-origin: top;
+  animation: warp-close 0.33s steps(6) forwards;
+}
+.warp-open {
+  transform: scaleY(1);
+  transform-origin: bottom;
+  animation: warp-open 0.33s steps(6) forwards;
+}
+@keyframes warp-close {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes warp-open {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(0); }
+}
+.warp-label-in {
+  opacity: 0;
+  animation: fade-in 0.15s steps(3) 0.25s forwards;
+}
+.warp-label-out {
+  animation: fade-in 0.12s steps(2) reverse forwards;
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

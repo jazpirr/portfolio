@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jazpher Neil P. Quirante — Portfolio</title>
+    <meta
+      name="description"
+      content="Jazpher Neil P. Quirante — IT student and aspiring Software Engineer building full-stack web, Android and Java game projects."
+    />
+    <meta property="og:title" content="Jazpher Neil P. Quirante — Portfolio" />
+    <meta property="og:description" content="Full-stack web, Android and game projects by a 4th-year IT student. Press start." />
+    <meta property="og:image" content="/projects/stictactics-fight-1.webp" />
+    <meta name="theme-color" content="#070d24" />
+    <link rel="preload" href="/fonts/vt323-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      try {
+        var t = localStorage.getItem('theme')
+        document.documentElement.dataset.theme = t === 'light' ? 'light' : 'dark'
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
