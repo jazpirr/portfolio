@@ -5,7 +5,7 @@ export const reducedMotion = () =>
 
 /* ── Pixel starfield background ───────────────────────────── */
 
-export function Starfield() {
+export function Starfield({ className = 'pointer-events-none fixed inset-0 -z-10' }: { className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -76,12 +76,70 @@ export function Starfield() {
     }
   }, [])
 
-  return <canvas ref={ref} aria-hidden className="pointer-events-none fixed inset-0 -z-10" />
+  return <canvas ref={ref} aria-hidden className={className} />
 }
 
-/* ── Boot screen ──────────────────────────────────────────── */
+/* ── Loading screen ───────────────────────────────────────── */
 
-export function BootScreen({ name }: { name: string }) {
+/** Pixel disc (sun or moon) as one SVG path. */
+function discPath(size: number) {
+  const r = size / 2
+  let d = ''
+  for (let y = 0; y < size; y++) {
+    const dy = y + 0.5 - r
+    const half = Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)))
+    if (half > 0) d += `M${r - half} ${y}h${half * 2}v1h-${half * 2}z`
+  }
+  return d
+}
+const BOOT_TORII = ['x..............x', 'xxxxxxxxxxxxxxxx', '.xxxxxxxxxxxxxx.', '...xx......xx...', '.xxxxxxxxxxxxxx.', '...xx......xx...', '...xx......xx...', '...xx......xx...', '..xxxx....xxxx..']
+const toriiPath = BOOT_TORII.map((row, y) => [...row].map((c, x) => (c === 'x' ? `M${x} ${y}h1v1h-1z` : '')).join('')).join('')
+
+/** The little dusk (or dawn) scene shown while loading — drawn twice for the sliding-door exit. */
+function BootArt({ pct, night, name }: { pct: number; night: boolean; name: string }) {
+  const lanterns = 10
+  const lit = Math.round((pct / 100) * lanterns)
+  return (
+    <div className="absolute inset-0 overflow-hidden" style={{ background: 'linear-gradient(to bottom, var(--sky-1), var(--sky-2) 55%, var(--sky-3))' }}>
+      {/* sun / moon rising with the progress */}
+      <div className="absolute left-1/2 top-[30%] h-40 w-40 -translate-x-1/2 sm:h-56 sm:w-56" style={{ transform: `translate(-50%, ${((100 - pct) * 1.6).toFixed(0)}px)` }}>
+        <div className="absolute -inset-1/2 rounded-full" style={{ background: 'radial-gradient(closest-side, var(--glow), transparent)' }} />
+        <svg viewBox="0 0 28 28" width="100%" height="100%" shapeRendering="crispEdges" className="relative">
+          <path d={discPath(28)} fill={night ? 'var(--moon)' : 'var(--sun)'} />
+        </svg>
+      </div>
+
+      {/* hills + torii */}
+      <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="absolute inset-x-0 bottom-[17%] h-[26%] w-full" shapeRendering="crispEdges">
+        <path d="M0 30V10h5V7h5V4h4v3h5V9h6V5h5V2h4v3h6V8h5V6h6V3h5v4h6V9h5V6h6V4h5v5h7V7h5V5H100V30z" fill="var(--mtn-1)" />
+        <path d="M0 30V18h6v-3h6v-4h5v3h7v-5h6v4h8v-2h6v5h7v-3h6v-4h7v4h6v3h8v-4h6v6h3v-3H100V30z" fill="var(--mtn-2)" />
+      </svg>
+      <svg viewBox="0 0 16 9" width="96" height="54" shapeRendering="crispEdges" className="absolute bottom-[19%] left-1/2 -translate-x-1/2">
+        <path d={toriiPath} fill="var(--mtn-3)" />
+      </svg>
+      <div className="absolute inset-x-0 bottom-0 h-[18%]" style={{ background: 'var(--mtn-3)' }} />
+
+      {/* title + lantern loading bar */}
+      <div className="absolute inset-x-0 top-[12%] px-6 text-center">
+        <p className="label text-sm text-muted">Portfolio · 2026</p>
+        <p className="title-shadow mt-3 font-pixel text-lg text-ink sm:text-2xl">{name}</p>
+      </div>
+      <div className="absolute inset-x-0 bottom-[6%] px-6 text-center">
+        <div className="mx-auto flex w-fit items-end gap-2.5 sm:gap-3.5">
+          {Array.from({ length: lanterns }, (_, i) => (
+            <span key={i} className={`boot-lantern ${i < lit ? 'on' : ''}`} />
+          ))}
+        </div>
+        <p className="label mt-4 text-sm text-ink/80">
+          {pct < 100 ? `Lighting the lanterns… ${String(pct).padStart(3, '0')}%` : 'Welcome'}
+        </p>
+        <p className="mt-1 text-xs text-ink/60">(click or press any key to skip)</p>
+      </div>
+    </div>
+  )
+}
+
+export function BootScreen() {
   const [show, setShow] = useState(() => {
     if (reducedMotion()) return false
     try {
@@ -92,30 +150,36 @@ export function BootScreen({ name }: { name: string }) {
   })
   const [pct, setPct] = useState(0)
   const [leaving, setLeaving] = useState(false)
+  const night = typeof document !== 'undefined' && document.documentElement.dataset.theme !== 'light'
+  const name = 'JAZPHER NEIL P. QUIRANTE'
 
   useEffect(() => {
     if (!show) return
+    let gone = false
     const done = () => {
+      if (gone) return
+      gone = true
       setLeaving(true)
       try {
         sessionStorage.setItem('booted', '1')
       } catch {
         /* ignore */
       }
-      setTimeout(() => setShow(false), 450)
+      setTimeout(() => setShow(false), 800)
     }
     const id = setInterval(() => {
       setPct((p) => {
-        const n = Math.min(100, p + 4 + Math.floor(Math.random() * 9))
+        const n = Math.min(100, p + 3 + Math.floor(Math.random() * 7))
         if (n === 100) {
           clearInterval(id)
-          setTimeout(done, 650)
+          setTimeout(done, 500)
         }
         return n
       })
-    }, 55)
+    }, 60)
     const skip = () => {
       clearInterval(id)
+      setPct(100)
       done()
     }
     window.addEventListener('keydown', skip, { once: true })
@@ -128,24 +192,14 @@ export function BootScreen({ name }: { name: string }) {
   }, [show])
 
   if (!show) return null
-  const blocks = 20
-  const filled = Math.round((pct / 100) * blocks)
+  // Two copies of the scene, each clipped to one half, slide apart like shoji doors.
   return (
-    <div
-      className={`fixed inset-0 z-[100] grid place-items-center bg-bg px-6 text-center ${leaving ? 'boot-out' : ''}`}
-      aria-hidden
-    >
-      <div>
-        <p className="label text-muted">© 2026 {name} soft</p>
-        <p className="title-shadow mt-6 font-pixel text-2xl text-accent sm:text-4xl">PORTFOLIO</p>
-        <div className="mx-auto mt-10 flex w-fit gap-1">
-          {Array.from({ length: blocks }, (_, i) => (
-            <span key={i} className={`h-4 w-2.5 sm:w-3.5 ${i < filled ? 'bg-accent' : 'bg-surface-2'}`} />
-          ))}
-        </div>
-        <p className="label mt-4 text-muted">Loading… {String(pct).padStart(3, '0')}%</p>
-        <p className={`label mt-10 text-lg text-ink ${pct === 100 ? 'blink' : 'opacity-0'}`}>Press start</p>
-        <p className="mt-6 text-sm text-muted">(press any key to skip)</p>
+    <div className="fixed inset-0 z-[100]" aria-hidden>
+      <div className={`absolute inset-0 [clip-path:inset(0_50%_0_0)] ${leaving ? 'door-left' : ''}`}>
+        <BootArt pct={pct} night={night} name={name} />
+      </div>
+      <div className={`absolute inset-0 [clip-path:inset(0_0_0_50%)] ${leaving ? 'door-right' : ''}`}>
+        <BootArt pct={pct} night={night} name={name} />
       </div>
     </div>
   )
@@ -296,92 +350,58 @@ export const addScore = (n: number) => window.dispatchEvent(new CustomEvent('sco
  * bursts on click. Only runs for a real mouse, and only animates while
  * there are sparks alive, so it costs nothing while idle.
  */
-export function PixelTrail() {
-  const ref = useRef<HTMLCanvasElement>(null)
-
+/**
+ * Cursor trail: tiny pixel sparks that pop and shrink away in under half a
+ * second. Each spark is a plain element with a CSS animation that removes
+ * itself when done — nothing is ever painted onto a canvas, so nothing can
+ * get "stuck" on screen.
+ */
+export function SparkTrail() {
   useEffect(() => {
     if (reducedMotion() || !window.matchMedia('(pointer: fine)').matches) return
-    const canvas = ref.current!
-    const ctx = canvas.getContext('2d')!
-    const VARS = ['--accent', '--yellow', '--pink', '--ok', '--purple', '--orange']
-    let colors: string[] = []
-    const readColors = () => {
-      const cs = getComputedStyle(document.documentElement)
-      colors = VARS.map((v) => cs.getPropertyValue(v).trim())
-    }
-    type Spark = { x: number; y: number; vx: number; vy: number; life: number; max: number; size: number; c: string }
-    const sparks: Spark[] = []
-    let raf = 0
-    let lastX = -1
-    let lastY = -1
-    let dpr = 1
+    const layer = document.createElement('div')
+    layer.className = 'spark-layer'
+    layer.setAttribute('aria-hidden', 'true')
+    document.body.appendChild(layer)
 
-    const resize = () => {
-      dpr = Math.min(2, window.devicePixelRatio || 1)
-      canvas.width = window.innerWidth * dpr
-      canvas.height = window.innerHeight * dpr
-    }
-    const add = (x: number, y: number, vx: number, vy: number, life: number, size: number) => {
-      if (sparks.length > 120) sparks.shift()
-      sparks.push({ x, y, vx, vy, life, max: life, size, c: colors[Math.floor(Math.random() * colors.length)] })
-      if (!raf) raf = requestAnimationFrame(loop)
-    }
-    const loop = () => {
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const s = sparks[i]
-        s.life--
-        if (s.life <= 0) {
-          sparks.splice(i, 1)
-          continue
-        }
-        s.x += s.vx
-        s.y += s.vy
-        s.vy += 0.12
-        ctx.globalAlpha = s.life / s.max
-        ctx.fillStyle = s.c
-        // snap to a 2px grid so sparks stay crisp "pixels"
-        ctx.fillRect(Math.round(s.x / 2) * 2, Math.round(s.y / 2) * 2, s.size, s.size)
-      }
-      ctx.globalAlpha = 1
-      raf = sparks.length ? requestAnimationFrame(loop) : 0
-    }
+    const COLORS = ['var(--accent)', 'var(--yellow)', 'var(--pink)']
+    let lastX = -999
+    let lastY = -999
+    let n = 0
 
+    const spawn = (x: number, y: number, big = false) => {
+      if (layer.childElementCount > 24) return
+      const s = document.createElement('span')
+      s.className = big ? 'spark big' : 'spark'
+      s.style.left = `${Math.round(x / 2) * 2}px`
+      s.style.top = `${Math.round(y / 2) * 2}px`
+      s.style.background = COLORS[n++ % COLORS.length]
+      s.style.setProperty('--dx', `${Math.round((Math.random() - 0.5) * 16)}px`)
+      s.addEventListener('animationend', () => s.remove(), { once: true })
+      layer.appendChild(s)
+    }
     const onMove = (e: PointerEvent) => {
       if (e.pointerType !== 'mouse') return
       const dx = e.clientX - lastX
       const dy = e.clientY - lastY
-      if (dx * dx + dy * dy < 140) return // one spark every ~12px of travel
+      if (dx * dx + dy * dy < 22 * 22) return
       lastX = e.clientX
       lastY = e.clientY
-      add(e.clientX, e.clientY, (Math.random() - 0.5) * 1.2, Math.random() * -0.6, 26, Math.random() < 0.3 ? 6 : 4)
+      spawn(e.clientX, e.clientY)
     }
     const onDown = (e: PointerEvent) => {
       if (e.pointerType !== 'mouse') return
-      for (let i = 0; i < 14; i++) {
-        const a = (i / 14) * Math.PI * 2
-        const v = 2.5 + Math.random() * 2
-        add(e.clientX, e.clientY, Math.cos(a) * v, Math.sin(a) * v - 1.5, 30 + Math.random() * 12, 4)
-      }
+      for (let i = 0; i < 5; i++) spawn(e.clientX, e.clientY, true)
     }
-
-    resize()
-    readColors()
-    window.addEventListener('resize', resize)
-    window.addEventListener('themechange', readColors)
     window.addEventListener('pointermove', onMove, { passive: true })
     window.addEventListener('pointerdown', onDown, { passive: true })
     return () => {
-      cancelAnimationFrame(raf)
-      window.removeEventListener('resize', resize)
-      window.removeEventListener('themechange', readColors)
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerdown', onDown)
+      layer.remove()
     }
   }, [])
-
-  return <canvas ref={ref} aria-hidden className="pointer-events-none fixed inset-0 z-[95] h-full w-full" />
+  return null
 }
 
 /* ── Cards tilt toward the mouse ──────────────────────────── */
@@ -402,6 +422,8 @@ export function useTilt() {
       const py = (my - r.top) / r.height - 0.5
       current.style.setProperty('--rx', `${(-py * 6).toFixed(2)}deg`)
       current.style.setProperty('--ry', `${(px * 6).toFixed(2)}deg`)
+      current.style.setProperty('--mx', `${((px + 0.5) * 100).toFixed(1)}%`)
+      current.style.setProperty('--my', `${((py + 0.5) * 100).toFixed(1)}%`)
     }
     const reset = (el: HTMLElement) => {
       el.style.removeProperty('--rx')
@@ -431,4 +453,200 @@ export function useTilt() {
       document.removeEventListener('pointerleave', onLeave)
     }
   }, [])
+}
+
+/* ── Falling pixel sakura petals ───────────────────────────── */
+
+export function Petals() {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    if (reducedMotion()) return
+    const canvas = ref.current!
+    const ctx = canvas.getContext('2d')!
+    let w = 0
+    let h = 0
+    let raf = 0
+    let last = 0
+    let colors = ['#ff9eb8', '#ffc4d4']
+    const readColors = () => {
+      const light = document.documentElement.dataset.theme === 'light'
+      colors = light ? ['#f28aa6', '#f7b3c4'] : ['#ff8fae', '#ffc0d0']
+    }
+    const count = window.innerWidth < 640 ? 4 : 8
+    const petals = Array.from({ length: count }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      s: 2, // pixel size
+      v: 0.0006 + Math.random() * 0.0008, // fall speed
+      p: Math.random() * Math.PI * 2, // sway phase
+      c: Math.floor(Math.random() * 2),
+    }))
+    const resize = () => {
+      w = canvas.width = window.innerWidth
+      h = canvas.height = window.innerHeight
+    }
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h)
+      for (const q of petals) {
+        const x = Math.round((q.x * w + Math.sin(q.p) * 26) / q.s) * q.s
+        const y = Math.round((q.y * h) / q.s) * q.s
+        const flip = Math.sin(q.p * 1.7) > 0
+        ctx.fillStyle = colors[q.c]
+        // tiny 3x2 pixel petal that "flips" as it falls
+        if (flip) {
+          ctx.fillRect(x, y, q.s * 2, q.s)
+          ctx.fillRect(x + q.s, y + q.s, q.s * 2, q.s)
+        } else {
+          ctx.fillRect(x + q.s, y, q.s * 2, q.s)
+          ctx.fillRect(x, y + q.s, q.s * 2, q.s)
+        }
+      }
+    }
+    const loop = (t: number) => {
+      raf = requestAnimationFrame(loop)
+      if (document.hidden || t - last < 33) return
+      last = t
+      for (const q of petals) {
+        q.y += q.v
+        q.p += 0.03
+        q.x += 0.0002
+        if (q.y > 1.02) {
+          q.y = -0.02
+          q.x = Math.random()
+        }
+        if (q.x > 1.02) q.x = -0.02
+      }
+      draw()
+    }
+    resize()
+    readColors()
+    window.addEventListener('resize', resize)
+    window.addEventListener('themechange', readColors)
+    raf = requestAnimationFrame(loop)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', resize)
+      window.removeEventListener('themechange', readColors)
+    }
+  }, [])
+  return <canvas ref={ref} aria-hidden className="pointer-events-none fixed inset-0 z-[40]" />
+}
+
+/* ── Cursor follower ──────────────────────────────────────── */
+
+/**
+ * A pixel ring that trails the mouse with a little lag. It grows over
+ * links/buttons and turns into a "VIEW" bubble over screenshots
+ * (elements with data-cursor="view"). Mouse only; off for reduced motion.
+ */
+export function CursorFollower() {
+  const ring = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (reducedMotion() || !window.matchMedia('(pointer: fine)').matches) return
+    const el = ring.current!
+    let x = -100
+    let y = -100
+    let rx = -100
+    let ry = -100
+    let raf = 0
+    let mode = ''
+
+    const loop = () => {
+      rx += (x - rx) * 0.2
+      ry += (y - ry) * 0.2
+      el.style.transform = `translate3d(${rx}px, ${ry}px, 0)`
+      raf = Math.abs(x - rx) + Math.abs(y - ry) > 0.2 ? requestAnimationFrame(loop) : 0
+    }
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return
+      x = e.clientX
+      y = e.clientY
+      el.style.opacity = '1'
+      const t = (e.target as Element).closest('[data-cursor], a, button, summary')
+      const m = t ? t.getAttribute('data-cursor') || 'link' : ''
+      if (m !== mode) {
+        mode = m
+        el.dataset.mode = m
+      }
+      if (!raf) raf = requestAnimationFrame(loop)
+    }
+    const onLeave = () => (el.style.opacity = '0')
+    const onDown = () => el.classList.add('press')
+    const onUp = () => el.classList.remove('press')
+
+    window.addEventListener('pointermove', onMove, { passive: true })
+    document.documentElement.addEventListener('pointerleave', onLeave)
+    window.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('pointermove', onMove)
+      document.documentElement.removeEventListener('pointerleave', onLeave)
+      window.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [])
+
+  return (
+    <div ref={ring} aria-hidden className="cursor-follow" style={{ opacity: 0 }}>
+      <span className="cursor-ring">
+        <span className="cursor-label">View</span>
+      </span>
+    </div>
+  )
+}
+
+/** Fades and lifts an element away as the page scrolls past it. */
+export function useScrollFade<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || reducedMotion()) return
+    let queued = false
+    const update = () => {
+      queued = false
+      const t = Math.min(1, window.scrollY / (window.innerHeight * 0.8))
+      el.style.opacity = String(1 - t * 0.9)
+      el.style.transform = `translateY(${(-t * 60).toFixed(1)}px)`
+    }
+    const on = () => {
+      if (!queued) {
+        queued = true
+        requestAnimationFrame(update)
+      }
+    }
+    update()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => window.removeEventListener('scroll', on)
+  }, [])
+  return ref
+}
+
+/** Scroll-progress bar that writes its transform directly (no re-renders). */
+export function useScrollBar() {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    let queued = false
+    const update = () => {
+      queued = false
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      const v = max > 0 ? Math.min(1, window.scrollY / max) : 0
+      if (ref.current) ref.current.style.transform = `scaleX(${v.toFixed(4)})`
+    }
+    const on = () => {
+      if (!queued) {
+        queued = true
+        requestAnimationFrame(update)
+      }
+    }
+    update()
+    window.addEventListener('scroll', on, { passive: true })
+    window.addEventListener('resize', on)
+    return () => {
+      window.removeEventListener('scroll', on)
+      window.removeEventListener('resize', on)
+    }
+  }, [])
+  return ref
 }

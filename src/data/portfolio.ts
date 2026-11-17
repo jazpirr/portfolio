@@ -26,10 +26,10 @@ export const profile = {
 }
 
 export const stats: [string, string][] = [
-  ['CLASS', 'IT Student'],
-  ['LEVEL', '4th Year'],
-  ['GUILD', 'CIT-U'],
-  ['QUEST', 'Find OJT'],
+  ['Role', 'IT Student'],
+  ['Year', '4th Year'],
+  ['School', 'CIT-U'],
+  ['Goal', 'OJT · 2026'],
 ]
 
 export const skills: { group: string; items: string[] }[] = [
@@ -67,11 +67,14 @@ export type Project = {
   media?: Media[]
   context: string
   year: string
+  /** Small badge on the card, e.g. "Web", "Game". */
+  kind?: string
 }
 
 export const featured: Project[] = [
   {
     title: 'ClassCraft',
+    kind: 'Web',
     role: 'Full-Stack Developer',
     tagline: 'Learn OOP and UML by building it',
     description: 'Interactive lessons and drag-and-drop exercises for learning OOP and UML.',
@@ -96,6 +99,7 @@ export const featured: Project[] = [
   },
   {
     title: 'SticTactics',
+    kind: 'Game',
     role: 'Game Developer',
     tagline: 'Two-player 2D fighting game',
     description: 'A two-player 2D fighting game in Java + FXGL with hand-drawn fighters.',
@@ -117,6 +121,7 @@ export const featured: Project[] = [
   },
   {
     title: 'ShareHub',
+    kind: 'Web',
     role: 'Lead Developer',
     tagline: 'Peer lending library for CIT-U students',
     description: 'A portal for CIT-U students to lend and borrow books and gear.',
@@ -142,6 +147,7 @@ export const featured: Project[] = [
   },
   {
     title: 'Ulysses',
+    kind: 'Mobile',
     role: 'Android Developer',
     tagline: 'A promise to your future self',
     description: 'An Android app that locks distracting apps — no backing out early.',
@@ -165,11 +171,35 @@ export const featured: Project[] = [
     context: 'Team of 2',
     year: '2025',
   },
+  {
+    title: 'PassMate',
+    kind: 'Web',
+    role: 'Front-end Developer',
+    tagline: 'Event ticketing made simple',
+    description: 'An event ticketing platform (released as “Event CIT”) where organizers create and manage campus events and attendees buy and track their QR tickets.',
+    highlights: [
+      'Built with a team of 3 — 30 of the project’s 75 commits are mine',
+      'Built the buy-ticket flow, including purchases by multiple users',
+      'Built the My Tickets page, event deletion with refunds, and edit/delete with confirmation pop-ups',
+      'Built the login/register flow, home page and profile page, plus an event sales breakdown',
+      'Connected the React front end to the REST API backend',
+    ],
+    stack: ['React', 'React Router', 'JavaScript', 'Axios', 'REST API'],
+    repo: 'https://github.com/HarleyGoodz/PassMate',
+    media: [
+      { src: '/projects/passmate-intro-anim.webp', alt: 'Animated Event CIT landing page — “Skip the line, scan your way in” — with a QR ticket card and the login form', caption: 'Landing & login', animated: true, zoom: 1.2 },
+      { src: '/projects/passmate-home.webp', alt: 'Event CIT home: “Skip the Line. Join the Fun.”, event search, available / happening now / finished counters and the published events list', caption: 'Home & events' },
+      { src: '/projects/passmate-signup.webp', alt: 'Event CIT sign-up page with full name, Gmail, role (student, teacher, employee) and password fields beside a three-step guide', caption: 'Create account' },
+    ],
+    context: 'Team of 3',
+    year: '2025',
+  },
 ]
 
 export const others: Project[] = [
   {
     title: 'Auth Service',
+    kind: 'Full-stack',
     role: '',
     tagline: '',
     description: 'User registration and login with a Spring Boot API plus React web and Kotlin Android clients, with protected routes.',
@@ -181,6 +211,7 @@ export const others: Project[] = [
   },
   {
     title: 'Ticketing & Check-in API',
+    kind: 'API',
     role: '',
     tagline: '',
     description: 'Layered Spring Boot REST API (controller → service → repository) with Spring Data JPA.',
@@ -192,6 +223,7 @@ export const others: Project[] = [
   },
   {
     title: 'Student Enrollment',
+    kind: 'Desktop',
     role: '',
     tagline: '',
     description: 'JavaFX desktop app for managing students and courses with FXML views.',
@@ -203,6 +235,7 @@ export const others: Project[] = [
   },
   {
     title: 'Web Calculator',
+    kind: 'Web',
     role: '',
     tagline: '',
     description: 'Framework-free calculator to practise DOM events and layout.',
@@ -221,10 +254,59 @@ export const education = [
   { level: 'Elementary', school: 'Lahug Christian School', detail: '', years: '2010 – 2017' },
 ]
 
-export const certifications = [
-  { title: 'AWS Academy Graduate', detail: 'Cloud Foundations', issuer: 'AWS Academy' },
-  { title: 'AWS Academy Graduate', detail: 'Generative AI Foundations', issuer: 'AWS Academy' },
-  { title: 'Intro to Software Engineering', detail: 'Online course', issuer: 'Coursera' },
-  { title: 'Java OOP Certification', detail: 'Certification exam', issuer: 'CIT-U' },
-  { title: 'C Programming', detail: 'Certification', issuer: 'CodeChum' },
+export type Certification = {
+  title: string
+  detail: string
+  issuer: string
+  date?: string
+  /** Certificate image in /public/certs (shown as a card + full-size viewer). */
+  image?: string
+  /** Public verification link (Credly, CodeChum). */
+  url?: string
+  /** e.g. "In progress" for a course that isn't finished yet. */
+  status?: string
+}
+
+export const certifications: Certification[] = [
+  {
+    title: 'AWS Academy Cloud Foundations',
+    detail: 'Graduate training badge · 20 hours',
+    issuer: 'AWS Academy',
+    date: 'Oct 2026',
+    image: '/certs/aws-cloud-foundations.webp',
+    url: 'https://www.credly.com/go/aLT6wizK',
+  },
+  {
+    title: 'AWS Academy Generative AI Foundations',
+    detail: 'Graduate training badge · 12 hours',
+    issuer: 'AWS Academy',
+    date: 'Oct 2026',
+    image: '/certs/aws-genai-foundations.webp',
+    url: 'https://www.credly.com/badges/231aedfb-906a-4e09-b02a-cb07a7dd53f3',
+  },
+  {
+    title: 'Cybersecurity Fundamentals',
+    detail: 'IBM SkillsBuild',
+    issuer: 'IBM',
+    date: 'Oct 2026',
+    image: '/certs/ibm-cybersecurity.webp',
+    url: 'https://www.credly.com/badges/bb7a064c-3f12-4d4e-a0dd-e28ffaea1f36',
+  },
+  {
+    title: 'Java Object-Oriented Programming',
+    detail: 'CIT-U certification exam',
+    issuer: 'CodeChum',
+    date: 'May 2025',
+    image: '/certs/codechum-java-oop.webp',
+    url: 'https://citu.codechum.com/certificates/10070',
+  },
+  {
+    title: 'C Programming',
+    detail: 'CIT-U certification',
+    issuer: 'CodeChum',
+    date: 'May 2024',
+    image: '/certs/codechum-c.webp',
+    url: 'https://citu.codechum.com/certificates/805',
+  },
+  { title: 'IBM Full Stack Software Developer', detail: 'Professional Certificate', issuer: 'IBM · Coursera', status: 'Currently taking' },
 ]

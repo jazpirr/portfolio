@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Project } from '../data/portfolio'
+import { MediaView } from './MediaView'
 
 type Style = React.CSSProperties & Record<`--${string}`, string>
 
@@ -11,45 +12,52 @@ export function ProjectCard({ project: p, n, color }: { project: Project; n: num
   const dialog = useRef<HTMLDialogElement>(null)
   const [shot, setShot] = useState(0)
   const media = p.media ?? []
-  const cover = media[0]
+  // Hovering the card flips through its screenshots like a slideshow.
+  const [preview, setPreview] = useState(0)
+  const timer = useRef(0)
+  const cover = media[preview] ?? media[0]
+
+  const startPreview = () => {
+    if (media.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    clearInterval(timer.current)
+    timer.current = window.setInterval(() => setPreview((i) => (i + 1) % media.length), 1100)
+  }
+  const stopPreview = () => {
+    clearInterval(timer.current)
+    setPreview(0)
+  }
+  useEffect(() => () => clearInterval(timer.current), [])
 
   const open = (i = 0) => {
     setShot(i)
     dialog.current?.showModal()
   }
 
+  const hasDetails = media.length > 0 || p.highlights.length > 0
+
   return (
-    <article className="px-box lift reveal tilt flex min-w-0 flex-col" style={{ '--sh': color } as Style} aria-labelledby={`p-${n}`}>
-      <div className="label flex items-center justify-between border-b-4 border-line bg-surface-2 px-3 py-1.5 text-xs">
-        <span>
-          <span style={{ color }}>■</span> Stage 1-{n}
-        </span>
-        <span className="text-muted">{p.year}</span>
-      </div>
-
-      {!cover && (
-        <div
-          className="relative grid aspect-video w-full place-items-center overflow-hidden border-b-4 border-line bg-surface-2"
-          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent 0 10px, rgba(255,255,255,.04) 10px 20px)' }}
-        >
-          <div className="text-center">
-            <p className="font-pixel text-lg title-shadow" style={{ color }}>
-              {p.title}
-            </p>
-            <p className="label mt-2 text-xs text-muted">
-              Screenshots loading<span className="blink">_</span>
-            </p>
-          </div>
-        </div>
-      )}
-
-      {cover && (
+    <article
+      className="card spot tilt lift-soft reveal flex min-w-0 flex-col p-4 sm:p-5"
+      aria-labelledby={`p-${n}`}
+      onMouseEnter={startPreview}
+      onMouseLeave={stopPreview}
+    >
+      {/* cover */}
+      {cover ? (
         <button
           type="button"
-          onClick={() => open(0)}
-          className="group relative block aspect-video w-full cursor-zoom-in overflow-hidden border-b-4 border-line bg-surface-2"
+          onClick={() => open(preview)}
+          data-cursor="view"
+          className="shine group relative block aspect-video w-full cursor-zoom-in overflow-hidden bg-surface-2 shadow-[0_0_0_2px_var(--line)]"
           aria-label={`Open ${p.title} screenshots`}
         >
+          {media.length > 1 && (
+            <span aria-hidden className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+              {media.map((m, i) => (
+                <span key={m.src} className={`h-1.5 w-1.5 ${i === preview ? 'bg-accent' : 'bg-white/60'}`} />
+              ))}
+            </span>
+          )}
           <div
             className="h-full w-full"
             style={cover.zoom ? { transform: `scale(${cover.zoom})`, transformOrigin: '50% 5%' } : undefined}
@@ -59,60 +67,78 @@ export function ProjectCard({ project: p, n, color }: { project: Project; n: num
               alt={cover.alt}
               loading="lazy"
               decoding="async"
-              className={`h-full w-full transition-transform duration-300 ${
+              className={`h-full w-full transition-transform duration-500 ${
                 cover.portrait
                   ? 'scale-[1.65] bg-white object-contain group-hover:scale-[1.75]'
                   : 'object-cover object-top group-hover:scale-105'
               }`}
             />
           </div>
-          {media.length > 1 && (
-            <span className="label absolute bottom-2 right-2 bg-bg/85 px-2 py-0.5 text-xs text-ink">
-              ▣ {media.length} shots
-            </span>
-          )}
         </button>
+      ) : (
+        // no screenshots: a simple pixel "code" banner
+        <div
+          aria-hidden
+          className="grid aspect-video w-full place-items-center bg-surface-2 shadow-[0_0_0_2px_var(--line)]"
+          style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent 0 11px, color-mix(in srgb, var(--line) 18%, transparent) 11px 12px)' }}
+        >
+          <span className="font-pixel text-2xl text-muted">{'</>'}</span>
+        </div>
       )}
 
-      <div className="flex flex-1 flex-col p-4">
-        <p className="label text-xs text-muted">{p.context}</p>
-        <h3 id={`p-${n}`} className="mt-1.5 font-pixel text-base" style={{ color }}>
+      <div className="mt-4 flex items-start justify-between gap-3">
+        <h3 id={`p-${n}`} className="font-pixel text-[15px] leading-snug" style={{ color }}>
           {p.title}
         </h3>
-        <p className="label mt-1 text-xs text-soft">{p.role}</p>
-        <p className="mt-2.5 line-clamp-3 text-sm leading-relaxed">{p.description}</p>
-        <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Tech stack">
-          {p.stack.slice(0, 2).map((s) => (
-            <li key={s} className="px-thin label bg-surface-2 px-1.5 text-[11px]">
-              {s}
-            </li>
-          ))}
-          {p.stack.length > 2 && (
-            <li className="label px-1 text-[11px] text-muted" title={p.stack.slice(2).join(', ')}>
-              +{p.stack.length - 2}
-            </li>
+        {p.kind && <span className="chip accent shrink-0">{p.kind}</span>}
+      </div>
+      <p className="mt-2.5 text-[15px] leading-relaxed text-ink/85">{p.description}</p>
+
+      <ul className="mt-4 flex flex-wrap gap-2" aria-label="Tech stack">
+        {p.stack.map((s) => (
+          <li key={s} className="chip">
+            {s}
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-auto flex items-center justify-between gap-3 pt-6">
+        <span className="label text-sm text-muted">
+          {p.year}
+        </span>
+        <span className="flex items-center gap-1">
+          {hasDetails && (
+            <button type="button" onClick={() => open(0)} className="label px-2 py-1 text-sm hover:text-accent" aria-label={`${p.title} details`}>
+              Details
+            </button>
           )}
-        </ul>
-        <div className="mt-auto flex flex-wrap gap-1 pt-4">
-          <button type="button" onClick={() => open(0)} className="px-btn px-btn-sm">
-            ▶ Details
-          </button>
           {p.repo ? (
-            <a href={p.repo} target="_blank" rel="noreferrer" className="px-btn px-btn-sm ghost">
-              Source ↗<span className="sr-only"> for {p.title}</span>
+            <a href={p.repo} target="_blank" rel="noreferrer" className="grid h-8 w-8 place-items-center hover:text-accent" aria-label={`${p.title} source code on GitHub`}>
+              <GitHubIcon />
             </a>
           ) : (
-            <span className="px-thin label m-1 self-center bg-surface-2 px-2 py-1 text-[11px] text-muted">Repo private</span>
+            <span className="label px-2 text-xs text-muted" title="Source code is private">
+              Private
+            </span>
           )}
-        </div>
+        </span>
       </div>
 
-      <ProjectDialog ref={dialog} project={p} color={color} shot={shot} setShot={setShot} />
+      {hasDetails && <ProjectDialog ref={dialog} project={p} color={color} shot={shot} setShot={setShot} />}
     </article>
   )
 }
 
-function ProjectDialog({
+function GitHubIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden>
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  )
+
+}
+
+export function ProjectDialog({
   ref,
   project: p,
   color,
@@ -167,12 +193,10 @@ function ProjectDialog({
             {current && (
               <figure>
                 <div className={`relative ${current.portrait ? 'px-thin bg-white' : ''}`}>
-                  <img
+                  <MediaView
                     key={current.src}
-                    src={current.src}
-                    alt={current.alt}
+                    media={current}
                     className={current.portrait ? 'mx-auto block h-[min(62vh,640px)] w-auto' : 'px-thin block h-auto w-full'}
-                    style={current.animated ? { imageRendering: 'auto' } : undefined}
                   />
                   {media.length > 1 && (
                     <>
@@ -204,7 +228,7 @@ function ProjectDialog({
                       }`}
                       style={i === shot ? { outlineStyle: 'solid' } : undefined}
                     >
-                      <img src={m.src} alt="" loading="lazy" className={`h-full w-full ${m.portrait ? 'object-contain' : 'object-cover object-top'}`} />
+                      <MediaView media={m} decorative className={`h-full w-full ${m.portrait ? 'object-contain' : 'object-cover object-top'}`} />
                     </button>
                   </li>
                 ))}

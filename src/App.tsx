@@ -1,33 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ProjectCard } from './components/ProjectCard'
+import { Spotlights } from './components/Spotlight'
+import { Scene } from './components/Scene'
 import { Sprite, sprites } from './components/Sprite'
 import {
   addScore,
   BootScreen,
-  PixelTrail,
   reducedMotion,
-  Starfield,
+  SparkTrail,
   useActiveSection,
   useKonami,
   useReveal,
-  useScrollProgress,
+  useScrollFade,
+  useScrollBar,
   useTilt,
-  useTypewriter,
 } from './components/effects'
-import { blip, setSfx, startMusic, stopMusic, warpSound } from './components/chiptune'
-import { certifications, education, featured, others, profile, skills, stats } from './data/portfolio'
+import { blip, setSfx, startMusic, stopMusic } from './components/chiptune'
+import { certifications, education, featured, others, profile, skills } from './data/portfolio'
+import type { Certification } from './data/portfolio'
 
 const NAV = [
-  { id: 'stages', label: 'Projects' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'skills', label: 'Skills' },
   { id: 'about', label: 'About' },
-  { id: 'inventory', label: 'Skills' },
-  { id: 'quests', label: 'Education' },
-  { id: 'achievements', label: 'Certs' },
   { id: 'contact', label: 'Contact' },
 ]
 const NAV_IDS = NAV.map((n) => n.id)
-
-type Style = React.CSSProperties & Record<`--${string}`, string>
 
 export default function App() {
   useReveal()
@@ -40,128 +37,100 @@ export default function App() {
     window.setTimeout(() => setToast(null), 2800)
   }, [])
 
+  // hidden easter egg: ↑ ↑ ↓ ↓ ← → ← → B A
   useKonami(() => {
     addScore(30000)
     setRain((r) => r + 1)
-    showToast('Cheat code accepted · +30000')
+    showToast('Cheat code accepted')
   })
 
   return (
     <>
-      <BootScreen name={profile.handle} />
-      <Starfield />
-      <PixelTrail />
-      <div aria-hidden className="scanlines" />
+      <BootScreen />
+      <Scene />
+      <SparkTrail />
       <a
-        href="#stages"
-        data-instant
+        href="#projects"
         className="label sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[90] focus:bg-accent focus:px-3 focus:py-2 focus:text-on-accent"
       >
         Skip to projects
       </a>
-      <Hud />
-      <main>
-        <div className="mx-auto max-w-6xl px-4 sm:px-8">
-          <Hero />
-        </div>
-        <Ticker />
-        <div className="mx-auto max-w-6xl px-4 sm:px-8">
-          <Stages />
-          <SideQuests />
-          <About />
-          <Inventory />
-          <QuestLog />
-          <Achievements onUnlock={showToast} />
-          <Continue />
-        </div>
+      <Header />
+      <main className="mx-auto max-w-6xl px-4 sm:px-8">
+        <Hero />
+        <Projects />
+        <Skills />
+        <About />
+        <Contact />
       </main>
-      <footer className="mx-auto max-w-6xl px-4 pb-10 pt-4 text-center sm:px-8">
-        <p className="text-sm text-muted">© {new Date().getFullYear()} {profile.name}</p>
-        <p className="label mt-1 text-xs text-muted">↑ ↑ ↓ ↓ ← → ← → B A</p>
+      <footer className="mx-auto max-w-6xl px-4 pb-10 sm:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-line/40 pt-6">
+          <p className="text-sm text-muted">© {new Date().getFullYear()} {profile.name}</p>
+          <a href="#top" className="label text-sm text-muted hover:text-accent">
+            Back to top ↑
+          </a>
+        </div>
       </footer>
       {toast && <Toast msg={toast} />}
       {rain > 0 && <CoinRain key={rain} />}
-      <Warp />
     </>
   )
 }
 
-/* ───────────────────────── HUD ───────────────────────── */
+/* ───────────────────────── Header ───────────────────────── */
 
-function Hud() {
-  const progress = useScrollProgress()
+function Header() {
+  const bar = useScrollBar()
   const active = useActiveSection(NAV_IDS)
-  const [bonus, setBonus] = useState(0)
   const [open, setOpen] = useState(false)
 
-  useEffect(() => {
-    const on = (e: Event) => setBonus((b) => b + (e as CustomEvent<number>).detail)
-    window.addEventListener('score', on)
-    return () => window.removeEventListener('score', on)
-  }, [])
-
-  const score = Math.round(progress * 10000) + bonus
-
   return (
-    <header className="sticky top-0 z-50 border-b-4 border-line bg-bg">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-8">
-        <a href="#top" className="flex items-center gap-2 font-pixel text-xs" aria-label="Back to top">
-          <span className="text-accent">JQ</span>
-          <span className="label hidden whitespace-nowrap text-sm text-muted sm:inline lg:hidden xl:inline">{profile.name}</span>
+    <header className="glass sticky top-0 z-50 border-b-2 border-line/40">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
+        <a href="#top" className="font-pixel text-xs text-ink lg:text-sm" aria-label="Back to top">
+          <span className="sm:hidden">{profile.shortName}</span>
+          <span className="hidden sm:inline">{profile.name}</span>
         </a>
 
-        <nav aria-label="Sections" className="hidden lg:block">
-          <ul className="label flex gap-5">
-            {NAV.map((n) => (
-              <li key={n.id}>
-                <a
-                  href={`#${n.id}`}
-                  aria-current={active === n.id ? 'true' : undefined}
-                  className={`cursor-arrow hover:text-accent ${active === n.id ? 'text-accent' : ''}`}
-                >
-                  {n.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <p className="label whitespace-nowrap text-sm tabular-nums" aria-label={`Score ${score}`}>
-            <span className="text-muted">Score </span>
-            {String(score).padStart(6, '0')}
-          </p>
-          <SoundToggle />
-          <ThemeToggle />
-          <button
-            type="button"
-            className="px-thin label grid h-9 w-9 place-items-center bg-surface lg:hidden"
-            aria-expanded={open}
-            aria-controls="mobile-menu"
-            aria-label="Menu"
-            onClick={() => setOpen((o) => !o)}
-          >
-            {open ? '✕' : '≡'}
-          </button>
+        <div className="flex items-center gap-6">
+          <nav aria-label="Sections" className="hidden md:block">
+            <ul className="label flex gap-6 text-base">
+              {NAV.map((n) => (
+                <li key={n.id}>
+                  <a
+                    href={`#${n.id}`}
+                    aria-current={active === n.id ? 'true' : undefined}
+                    className={`hover:text-accent ${active === n.id ? 'text-accent' : 'text-ink'}`}
+                  >
+                    {n.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="flex items-center gap-2.5">
+            <SoundToggle />
+            <ThemeToggle />
+            <button
+              type="button"
+              className="px-thin label grid h-8 w-8 place-items-center md:hidden"
+              aria-expanded={open}
+              aria-controls="mobile-menu"
+              aria-label="Menu"
+              onClick={() => setOpen((o) => !o)}
+            >
+              {open ? '✕' : '≡'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* XP bar = scroll progress (scaleX → no layout work) */}
-      <div className="h-1.5 bg-surface-2" aria-hidden>
-        <div className="h-full origin-left bg-accent" style={{ transform: `scaleX(${progress})` }} />
-      </div>
-
       {open && (
-        <nav id="mobile-menu" aria-label="Sections" className="border-t-4 border-line bg-surface lg:hidden">
-          <ul className="label mx-auto max-w-6xl px-4 py-2 text-base">
+        <nav id="mobile-menu" aria-label="Sections" className="border-t-2 border-line/40 md:hidden">
+          <ul className="label px-4 py-2 text-base">
             {NAV.map((n) => (
               <li key={n.id}>
-                <a
-                  href={`#${n.id}`}
-                  onClick={() => setOpen(false)}
-                  aria-current={active === n.id ? 'true' : undefined}
-                  className="cursor-arrow block py-3"
-                >
+                <a href={`#${n.id}`} onClick={() => setOpen(false)} className="block py-3">
                   {n.label}
                 </a>
               </li>
@@ -169,14 +138,18 @@ function Hud() {
           </ul>
         </nav>
       )}
+
+      {/* scroll progress */}
+      <div className="absolute inset-x-0 -bottom-0.5 h-0.5" aria-hidden>
+        <div ref={bar} className="h-full origin-left bg-accent will-change-transform" style={{ transform: 'scaleX(0)' }} />
+      </div>
     </header>
   )
 }
 
 /**
- * 8-bit music + click blips. Off by default; the choice is remembered.
- * Browsers only allow audio after a user gesture, so a saved "on" waits
- * for the first click/key before starting.
+ * 8-bit music + click blips. On by default (remembered); browsers only
+ * allow audio after a user gesture, so it starts on the first click/key.
  */
 function SoundToggle() {
   const [on, setOn] = useState(() => {
@@ -198,7 +171,6 @@ function SoundToggle() {
       stopMusic()
       return
     }
-    // Try now (works when toggled by a click); otherwise wait for a gesture.
     let started = false
     const start = () => {
       if (started) return
@@ -210,7 +182,7 @@ function SoundToggle() {
     window.addEventListener('keydown', start, { once: true })
     const onClick = (e: MouseEvent) => {
       const el = (e.target as Element).closest('a, button')
-      if (el && !el.hasAttribute('data-no-blip') && !el.getAttribute('href')?.startsWith('#')) blip(el.classList.contains('px-btn'))
+      if (el && !el.hasAttribute('data-no-blip')) blip(el.classList.contains('px-btn'))
     }
     document.addEventListener('click', onClick)
     return () => {
@@ -226,427 +198,335 @@ function SoundToggle() {
       data-no-blip
       onClick={() => setOn((o) => !o)}
       aria-pressed={on}
-      aria-label={on ? 'Turn music and sound off' : 'Turn music and sound on'}
+      aria-label={on ? 'Turn music off' : 'Turn music on'}
       title={on ? 'Music on' : 'Music off'}
-      className={`px-thin label flex h-9 items-center gap-1.5 px-2.5 text-xs hover:bg-surface-2 ${on ? 'bg-accent text-on-accent hover:text-ink' : 'bg-surface'}`}
+      className={`px-thin label grid h-8 w-8 place-items-center text-sm ${on ? 'text-accent' : 'text-muted'}`}
     >
-      <span aria-hidden className={on ? '' : 'opacity-60'}>♪</span>
-      <span className="hidden whitespace-nowrap sm:inline lg:hidden xl:inline">{on ? 'Music on' : 'Music'}</span>
-      {on && (
+      {on ? (
         <span aria-hidden className="flex h-3 items-end gap-px">
           <span className="eq h-full w-[3px] bg-current" />
           <span className="eq h-full w-[3px] bg-current [animation-delay:-.3s]" />
           <span className="eq h-full w-[3px] bg-current [animation-delay:-.6s]" />
         </span>
+      ) : (
+        <span aria-hidden>♪</span>
       )}
     </button>
   )
 }
 
+/**
+ * Night/Day switch. The moon (or sun) sinks behind the hills,
+ * the palette flips while it's hidden, then the other one rises.
+ */
 function ThemeToggle() {
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme ?? 'dark')
+  const [busy, setBusy] = useState(false)
   const next = theme === 'dark' ? 'light' : 'dark'
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        document.documentElement.dataset.theme = next
-        try {
-          localStorage.setItem('theme', next)
-        } catch {
-          /* ignore */
-        }
-        window.dispatchEvent(new Event('themechange'))
-        setTheme(next)
-      }}
-      aria-label={`Switch to ${next === 'light' ? 'day' : 'night'} mode`}
-      className="px-thin label h-9 whitespace-nowrap bg-surface px-2.5 text-xs hover:bg-surface-2"
-    >
-      {theme === 'dark' ? '☀ Day' : '☾ Night'}
-    </button>
-  )
-}
 
-/* ───────────────────────── Hero ───────────────────────── */
-
-const TERMINAL = [
-  '> whoami',
-  profile.name,
-  '> cat role.txt',
-  'IT Student @ CIT-U · 4th year',
-  '> ls skills/',
-  'java  kotlin  spring-boot  react',
-  'django  postgresql  android',
-  '> echo $STATUS',
-  'OPEN_TO_OJT=true',
-].join('\n')
-
-function Hero() {
-  // 'Jazpher Neil P. Quirante' → JAZPHER / NEIL P. / QUIRANTE
-  const words = profile.name.toUpperCase().split(' ')
-  const lines = [words[0], words.slice(1, -1).join(' '), words[words.length - 1]].filter(Boolean)
-
-  return (
-    <section id="top" className="grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[1.15fr_1fr]">
-      <div className="min-w-0">
-        <p className="label flex items-center gap-2.5 text-ok">
-          <span className="blink inline-block h-2.5 w-2.5 bg-ok" aria-hidden />
-          {profile.status}
-        </p>
-
-        <h1 className="mt-6 font-pixel text-[clamp(1.75rem,6vw,3.5rem)] leading-[1.25]">
-          <span className="sr-only">{profile.name}</span>
-          {lines.map((l, i) => (
-            <span key={l} aria-hidden className={`title-shadow-pop block ${i === 1 ? 'text-soft' : i === 2 ? 'text-accent' : 'text-ink'}`}>
-              {l}
-            </span>
-          ))}
-        </h1>
-
-        <p className="label mt-6 text-base text-muted">{profile.role}</p>
-
-        <p className="mt-6 max-w-xl text-lg leading-relaxed">{profile.greeting}</p>
-
-        <div className="mt-8 flex flex-wrap gap-4">
-          <a href="#stages" className="px-btn">▶ View projects</a>
-          <a href={profile.links.github} target="_blank" rel="noreferrer" className="px-btn ghost">GitHub</a>
-          {profile.links.resume && (
-            <a href={profile.links.resume} target="_blank" rel="noreferrer" className="px-btn ghost">Résumé</a>
-          )}
-        </div>
-      </div>
-
-      <Terminal />
-    </section>
-  )
-}
-
-function Terminal() {
-  const typed = useTypewriter(TERMINAL, 32, 700)
-  const done = typed.length === TERMINAL.length
-  const lines = (s: string, cursor = false) => {
-    const all = s.split('\n')
-    return all.map((l, i) => (
-      <div key={i} className={l.startsWith('>') ? 'text-accent' : 'text-ink'}>
-        {l || (cursor ? '' : ' ')}
-        {cursor && i === all.length - 1 && (
-          <span className="blink ml-0.5 inline-block h-4 w-2.5 translate-y-0.5 bg-accent" />
-        )}
-      </div>
-    ))
+  const apply = () => {
+    document.documentElement.dataset.theme = next
+    try {
+      localStorage.setItem('theme', next)
+    } catch {
+      /* ignore */
+    }
+    window.dispatchEvent(new Event('themechange'))
+    setTheme(next)
   }
 
   return (
-    <div className="min-w-0">
-      <div className="px-box" style={{ '--sh': 'var(--shadow)' } as Style}>
-        <div className="flex items-center justify-between border-b-4 border-line bg-surface-2 px-4 py-2">
-          <span className="label text-xs text-muted">jazpher@cit-u: ~</span>
-          <span className="flex gap-1.5" aria-hidden>
-            <span className="h-3 w-3 bg-pink" />
-            <span className="h-3 w-3 bg-yellow" />
-            <span className="h-3 w-3 bg-ok" />
-          </span>
-        </div>
-        <div className="relative bg-bg p-5 text-sm leading-7 sm:text-[15px]">
-          <pre className="sr-only">{TERMINAL}</pre>
-          {/* invisible copy reserves the final height so nothing jumps */}
-          <div aria-hidden className="invisible whitespace-pre-wrap">{lines(TERMINAL + '\n> ')}</div>
-          <div aria-hidden className="absolute inset-0 whitespace-pre-wrap p-5">
-            {lines(typed + (done ? '\n> ' : ''), true)}
-          </div>
-        </div>
-      </div>
-
-      <dl className="px-box mt-8 grid grid-cols-2 gap-x-4 gap-y-3 p-4 sm:grid-cols-4">
-        {stats.map(([k, v], n) => (
-          <div key={k}>
-            <dt className={`label text-xs ${POP_TEXT[n % POP_TEXT.length]}`}>{k}</dt>
-            <dd className="text-sm">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  )
-}
-
-function Ticker() {
-  const items = ['Open to OJT', 'Java', 'Kotlin', 'Spring Boot', 'React', 'Django', 'Android', 'PostgreSQL', 'AWS']
-  const row = items.map((t, n) => (
-    <span key={t} className="flex items-center gap-6 px-3">
-      <span className={POP_TEXT[n % POP_TEXT.length]}>{t}</span>
-      <span className="text-muted">✦</span>
-    </span>
-  ))
-  return (
-    <div className="label my-6 overflow-hidden border-y-4 border-line bg-surface py-2.5 text-base" aria-hidden>
-      <div className="marquee flex w-max">
-        {row}
-        {row}
-      </div>
-    </div>
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => {
+        if (reducedMotion() || window.scrollY > window.innerHeight * 1.5) {
+          apply()
+          return
+        }
+        setBusy(true)
+        window.dispatchEvent(new Event('celestial-set'))
+        window.setTimeout(() => {
+          apply()
+          window.setTimeout(() => setBusy(false), 700)
+        }, 620)
+      }}
+      aria-label={`Switch to ${next === 'light' ? 'day' : 'night'} mode`}
+      className="px-thin label flex h-8 items-center text-sm"
+    >
+      <span aria-hidden className={`grid h-full w-8 place-items-center ${theme === 'dark' ? 'bg-accent text-on-accent' : 'text-muted'}`}>
+        ☾
+      </span>
+      <span aria-hidden className={`grid h-full w-8 place-items-center ${theme === 'light' ? 'bg-accent text-on-accent' : 'text-muted'}`}>
+        ☀
+      </span>
+    </button>
   )
 }
 
 /* ───────────────────────── Sections ───────────────────────── */
 
-/* Accent colours rotate through sections/cards so blue stays the base. */
-const POP = ['var(--yellow)', 'var(--pink)', 'var(--ok)', 'var(--orange)', 'var(--purple)', 'var(--accent)']
-const POP_TEXT = ['text-yellow', 'text-pink', 'text-ok', 'text-orange', 'text-purple', 'text-accent']
-
-function SectionHead({ id, world, title, note, color }: { id: string; world: string; title: string; note?: string; color: string }) {
+function Title({ id, children }: { id: string; children: React.ReactNode }) {
   return (
-    <div className="reveal from-left mb-8 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <p className="label" style={{ color }}>
-          {world}
-        </p>
-        <h2 id={`${id}-title`} className="wipe mt-3 font-pixel text-xl sm:text-3xl" style={{ textShadow: `4px 4px 0 ${color}` }}>
-          {title}
-        </h2>
-      </div>
-      {note && <p className="label text-muted">{note}</p>}
-    </div>
+    <h2 id={`${id}-title`} className="reveal mb-10 text-center font-pixel text-xl sm:text-2xl">
+      {children}
+      <span aria-hidden className="mx-auto mt-4 block h-1 w-12 bg-accent" />
+    </h2>
   )
 }
 
-function Stages() {
+function Hero() {
+  const fade = useScrollFade<HTMLDivElement>()
   return (
-    <section id="stages" aria-labelledby="stages-title" className="pb-12 pt-8 sm:pb-16">
-      <SectionHead id="stages" world="World 1" title="PROJECTS" note={`${featured.length} stages cleared`} color="var(--accent)" />
-      <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-        {featured.map((p, i) => (
-          <ProjectCard key={p.title} project={p} n={i + 1} color={POP[i % POP.length]} />
-        ))}
+    <section id="top" className="flex min-h-[calc(100svh-4rem)] flex-col justify-center pb-24 pt-10">
+      <div ref={fade} className="max-w-2xl">
+        <p className="label flex items-center gap-2.5 text-base text-ok">
+          <span className="blink inline-block h-2.5 w-2.5 bg-ok" aria-hidden />
+          {profile.status}
+        </p>
+        <p className="label mt-6 text-xl text-muted">Hi, I'm {profile.name}</p>
+        <h1 className="title-shadow mt-4 font-pixel text-[clamp(1.9rem,5.5vw,3.5rem)] leading-[1.2]">
+          Aspiring
+          <br />
+          <span className="text-accent">Software Engineer</span>
+        </h1>
+        <p className="mt-7 max-w-xl text-lg leading-relaxed text-ink/90">
+          I build functional, user-focused applications — from full-stack web platforms to Android apps and games.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <a href="#projects" className="px-btn">
+            View Projects
+          </a>
+          {profile.links.resume ? (
+            <a href={profile.links.resume} target="_blank" rel="noreferrer" className="px-btn ghost">
+              Download Résumé
+            </a>
+          ) : (
+            <a href="#contact" className="px-btn ghost">
+              Contact Me
+            </a>
+          )}
+        </div>
       </div>
     </section>
   )
 }
 
-function SideQuests() {
+function Projects() {
   return (
-    <section aria-labelledby="side-title" className="pb-16 sm:pb-24">
-      <h3 id="side-title" className="label reveal mb-6 text-base text-muted">
-        + Side quests
-      </h3>
-      <ul className="grid gap-5 sm:grid-cols-2">
-        {others.map((p, n) => (
-          <li key={p.title} className={`reveal ${n % 2 ? 'from-right' : 'from-left'}`}>
-            <a
-              href={p.repo}
-              target="_blank"
-              rel="noreferrer"
-              className="px-box lift group flex h-full flex-col p-5"
-              style={{ '--o': '6px', '--sh': POP[(n + 1) % POP.length] } as Style}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span className="label text-lg normal-case tracking-normal group-hover:text-accent">{p.title}</span>
-                <span aria-hidden className="text-muted group-hover:text-accent">↗</span>
-              </div>
-              <span className="label text-xs text-muted">
-                {p.context} · {p.year}
-              </span>
-              <span className="mt-2 flex-1 text-sm leading-relaxed text-muted">{p.description}</span>
-              <span className={`label mt-3 text-xs ${POP_TEXT[(n + 1) % POP_TEXT.length]}`}>{p.stack.join(' · ')}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+    <section id="projects" aria-labelledby="projects-title" className="pb-32 pt-8">
+      <Title id="projects">Projects</Title>
+      <Spotlights projects={featured} />
+    </section>
+  )
+}
+
+// Skills I've actually used in the projects above are highlighted.
+const USED = new Set(
+  [...featured, ...others]
+    .flatMap((p) => p.stack)
+    .map((s) => (s === 'JS' ? 'JavaScript' : s))
+    .concat(['REST APIs', 'JWT / OAuth', 'Git', 'GitHub', 'HTML', 'CSS']),
+)
+
+function Skills() {
+  return (
+    <section id="skills" aria-labelledby="skills-title" className="pb-24">
+      <Title id="skills">Skills</Title>
+      <div className="card reveal mx-auto max-w-5xl p-6 sm:p-10">
+        <p className="label mb-8 flex flex-wrap justify-center gap-6 text-sm text-muted">
+          <span className="flex items-center gap-2">
+            <span className="inline-block h-3 w-3 bg-ok" /> Used in my projects
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="inline-block h-3 w-3 shadow-[inset_0_0_0_2px_var(--muted)]" /> Familiar
+          </span>
+        </p>
+        <div className="divide-y-2 divide-line/20">
+          {skills.map((g, gi) => (
+            <div key={g.group} className="grid gap-3 py-5 first:pt-0 last:pb-0 sm:grid-cols-[9rem_1fr] sm:items-center">
+              <h3 className="label text-lg text-ink">{g.group}</h3>
+              <ul className="flex flex-wrap gap-2.5">
+                {g.items.map((s, i) => (
+                  <li key={s} style={{ '--i': String(i + gi * 3) } as React.CSSProperties} className={`chip chip-pop ${USED.has(s) ? 'solid' : 'muted'}`}>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
     </section>
   )
 }
 
 function About() {
+  const { email, linkedin, github } = profile.links
   return (
-    <section id="about" aria-labelledby="about-title" className="pb-16 sm:pb-24">
-      <SectionHead id="about" world="World 2" title="ABOUT ME" color="var(--pink)" />
-      <div className="grid gap-10 lg:grid-cols-12">
-        <div className="reveal from-left space-y-5 text-lg leading-relaxed lg:col-span-7">
+    <section id="about" aria-labelledby="about-title" className="pb-24">
+      <Title id="about">About Me</Title>
+
+      <div className="card reveal mx-auto grid max-w-5xl gap-8 p-6 sm:p-10 md:grid-cols-[11rem_1fr]">
+        <div className="flex flex-col items-center gap-4 text-center">
+          {/* pixel monogram in place of a photo */}
+          <div className="grid h-36 w-36 place-items-center bg-surface-2 shadow-[inset_0_0_0_4px_var(--line)]">
+            <span className="title-shadow font-pixel text-4xl text-accent">JQ</span>
+          </div>
+          <div className="label flex gap-4 text-sm">
+            {email && (
+              <a href={`mailto:${email}`} className="hover:text-accent">
+                Email
+              </a>
+            )}
+            {linkedin && (
+              <a href={linkedin} target="_blank" rel="noreferrer" className="hover:text-accent">
+                LinkedIn
+              </a>
+            )}
+            <a href={github} target="_blank" rel="noreferrer" className="hover:text-accent">
+              GitHub
+            </a>
+          </div>
+        </div>
+        <div className="space-y-5 text-[17px] leading-relaxed">
           {profile.about.map((para) => (
             <p key={para.slice(0, 24)}>{para}</p>
           ))}
+          <dl className="label grid grid-cols-2 gap-x-6 gap-y-2 pt-2 text-sm">
+            {[
+              ['School', 'CIT-U · BS IT'],
+              ['Year', '4th year'],
+              ['Based in', profile.location],
+              ['Seeking', 'OJT / internship'],
+            ].map(([k, v]) => (
+              <div key={k}>
+                <dt className="text-muted">{k}</dt>
+                <dd className="text-ink">{v}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
-        <dl className="px-box reveal from-right h-fit divide-y-2 divide-surface-2 lg:col-span-5">
-          {[
-            ['Name', profile.name],
-            ['School', profile.school],
-            ['Course', 'BS Information Technology'],
-            ['Based in', profile.location],
-            ['Seeking', 'OJT — web, mobile or back-end'],
-          ].map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-6 px-5 py-3">
-              <dt className="label text-xs text-muted">{k}</dt>
-              <dd className="text-right text-sm">{v}</dd>
-            </div>
-          ))}
-        </dl>
+      </div>
+
+      {/* education + certifications, side by side */}
+      <div className="mx-auto mt-8 grid max-w-5xl gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="card reveal flex flex-col p-6 sm:p-8">
+          <h3 className="label mb-5 text-lg text-ok">Education</h3>
+          <ol className="relative flex flex-1 flex-col justify-between gap-5 pl-5">
+            <span aria-hidden className="draw-line absolute bottom-0 left-0 top-0 w-0.5 bg-line/50" />
+            {education.map((e, i) => (
+              <li key={e.level} className="relative">
+                <span aria-hidden className={`absolute -left-[1.6rem] top-1.5 h-2.5 w-2.5 ${i === 0 ? 'bg-ok' : 'bg-line'}`} />
+                <p className="label text-sm text-muted">{e.years}</p>
+                <p className="font-medium">{e.school}</p>
+                <p className="text-sm text-muted">{e.detail || e.level}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <Certifications />
       </div>
     </section>
   )
 }
 
-function Inventory() {
-  return (
-    <section id="inventory" aria-labelledby="inventory-title" className="pb-16 sm:pb-24">
-      <SectionHead id="inventory" world="World 3" title="SKILLS" note="Inventory" color="var(--yellow)" />
-      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {skills.map((g, n) => (
-          <div
-            key={g.group}
-            className="px-box reveal pop tilt p-5"
-            style={{ '--o': '6px', '--sh': POP[n % POP.length], '--pop': POP[n % POP.length] } as Style}
-          >
-            <h3 className="label" style={{ color: 'var(--pop)' }}>
-              {g.group}
-            </h3>
-            <ul className="mt-4 grid grid-cols-2 gap-2">
-              {g.items.map((s) => (
-                <li
-                  key={s}
-                  className="px-thin cursor-default bg-surface-2 px-2 py-1.5 text-center text-sm hover:bg-(--pop) hover:text-on-accent"
-                >
-                  {s}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function QuestLog() {
-  return (
-    <section id="quests" aria-labelledby="quests-title" className="pb-16 sm:pb-24">
-      <SectionHead id="quests" world="World 4" title="EDUCATION" note="Quest log" color="var(--ok)" />
-      <ol className="relative ml-3 border-l-4 border-dashed border-line pl-8 sm:ml-6">
-        {education.map((e, i) => (
-          <li key={e.level} className="reveal from-right relative pb-10 last:pb-0">
-            <span className="absolute -left-[3.05rem] top-0 bg-bg p-1" aria-hidden>
-              <Sprite rows={sprites.save} scale={3} />
-            </span>
-            <p className="label text-xs text-ok">
-              {i === 0 ? 'Current quest' : 'Complete'} · {e.years}
-            </p>
-            <h3 className="label mt-1 text-xl normal-case tracking-normal">{e.level}</h3>
-            <p className="text-base">{e.school}</p>
-            {e.detail && <p className="text-sm text-soft">{e.detail}</p>}
-          </li>
-        ))}
-      </ol>
-    </section>
-  )
-}
-
-function Achievements({ onUnlock }: { onUnlock: (m: string) => void }) {
-  const ref = useRef<HTMLElement>(null)
-  const fired = useRef(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!el || !('IntersectionObserver' in window)) return
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting && !fired.current) {
-          fired.current = true
-          addScore(500)
-          onUnlock(`Achievements unlocked · ${certifications.length}/${certifications.length}`)
-        }
-      },
-      { threshold: 0.4 },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [onUnlock])
+function Certifications() {
+  const viewer = useRef<HTMLDialogElement>(null)
+  const [open, setOpen] = useState<Certification | null>(null)
+  const show = (c: Certification) => {
+    setOpen(c)
+    viewer.current?.showModal()
+  }
 
   return (
-    <section ref={ref} id="achievements" aria-labelledby="achievements-title" className="pb-16 sm:pb-24">
-      <SectionHead id="achievements" world="World 5" title="CERTIFICATES" note="Achievements" color="var(--purple)" />
-      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {certifications.map((c, i) => (
-          <li
-            key={c.title + c.detail}
-            className="px-box lift reveal pop flex items-center gap-4 p-4"
-            style={{ transitionDelay: `${i * 70}ms`, '--o': '6px', '--sh': POP[i % POP.length] } as Style}
-          >
-            <span className="grid h-16 w-16 shrink-0 place-items-center bg-surface-2">
-              <Sprite rows={sprites.trophy} scale={4} />
-            </span>
+    <div id="certs" className="card reveal p-6 sm:p-8">
+      <h3 className="label mb-5 text-lg text-ok">Certifications</h3>
+      <ul className="space-y-4">
+        {certifications.map((c) => (
+          <li key={c.title} className="flex items-center gap-4">
+            {/* small thumbnail: zooms + overlay on hover, opens full size on click */}
+            {c.image ? (
+              <button
+                type="button"
+                onClick={() => show(c)}
+                className="zoom-card relative block aspect-[13/10] w-24 shrink-0 cursor-zoom-in overflow-hidden bg-surface-2 shadow-[0_0_0_2px_var(--line)] sm:w-28"
+                aria-label={`View ${c.title} certificate`}
+              >
+                <img src={c.image} alt={`${c.title} certificate from ${c.issuer}`} loading="lazy" className="zoom-img h-full w-full object-cover object-top" />
+                <span className="zoom-overlay">
+                  <span className="label text-lg text-ink">⤢</span>
+                </span>
+              </button>
+            ) : (
+              <span className="grid aspect-[13/10] w-24 shrink-0 place-items-center bg-surface-2 shadow-[0_0_0_2px_var(--line)] sm:w-28" aria-hidden>
+                <Sprite rows={sprites.trophy} scale={3} />
+              </span>
+            )}
             <div className="min-w-0">
-              <p className={`label text-xs ${POP_TEXT[i % POP_TEXT.length]}`}>Unlocked · {c.issuer}</p>
-              <p className="mt-0.5 font-medium leading-snug">{c.title}</p>
-              <p className="text-sm text-muted">{c.detail}</p>
+              <p className="font-medium leading-snug">{c.title}</p>
+              <p className="label text-sm text-muted">
+                {c.issuer}
+                {c.date && ` · ${c.date}`}
+              </p>
+              {c.status && (
+                <span className="label mt-1.5 inline-flex items-center gap-1.5 text-sm text-yellow">
+                  <span aria-hidden className="blink inline-block h-2 w-2 bg-yellow" />
+                  {c.status}
+                </span>
+              )}
             </div>
           </li>
         ))}
       </ul>
-    </section>
+
+      {/* full-size certificate viewer */}
+      <dialog
+        ref={viewer}
+        className="m-auto w-fit max-w-[94vw] bg-transparent p-0 backdrop:bg-black/80"
+        aria-label={open ? `${open.title} certificate` : 'Certificate'}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) viewer.current?.close()
+        }}
+        onClose={() => setOpen(null)}
+      >
+        {open?.image && (
+          <div className="px-box m-1">
+            <div className="flex items-center justify-between gap-3 border-b-4 border-line bg-surface-2 px-4 py-2">
+              <p className="label truncate text-sm">{open.title}</p>
+              <button type="button" onClick={() => viewer.current?.close()} className="label px-2 text-lg hover:text-accent" aria-label="Close">
+                ✕
+              </button>
+            </div>
+            <img src={open.image} alt={`${open.title} certificate from ${open.issuer}`} className="block h-auto max-h-[78vh] w-auto max-w-full" />
+          </div>
+        )}
+      </dialog>
+    </div>
   )
 }
 
-function Continue() {
-  const ref = useRef<HTMLElement>(null)
-  const [count, setCount] = useState(9)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el || !('IntersectionObserver' in window)) return
-    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.3 })
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (!visible || reducedMotion()) return
-    const id = window.setInterval(() => setCount((c) => (c === 0 ? 9 : c - 1)), 1000)
-    return () => clearInterval(id)
-  }, [visible])
-
-  const { email, linkedin, github, resume } = profile.links
-  const links = [
-    email && { label: 'Email', href: `mailto:${email}`, text: email },
-    linkedin && { label: 'LinkedIn', href: linkedin, text: linkedin.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') },
-    { label: 'GitHub', href: github, text: github.replace(/^https?:\/\//, '') },
-    resume && { label: 'Résumé', href: resume, text: 'Download PDF' },
-  ].filter(Boolean) as { label: string; href: string; text: string }[]
-
+function Contact() {
+  const { email, linkedin } = profile.links
   return (
-    <section ref={ref} id="contact" aria-labelledby="contact-title" className="pb-16 sm:pb-24">
-      <div className="px-box reveal pop p-6 text-center sm:p-12" style={{ '--sh': 'var(--orange)' } as Style}>
-        <h2 id="contact-title" className="title-shadow-pop font-pixel text-2xl sm:text-4xl">
-          CONTINUE?
-        </h2>
-        <p aria-hidden className="mt-6 font-pixel text-5xl text-yellow sm:text-6xl">
-          {count}
-        </p>
-        <p className="mx-auto mt-8 max-w-xl text-lg leading-relaxed">
-          Looking for an OJT trainee who ships? I'd love to talk — and walk you through any of these projects.
+    <section id="contact" aria-labelledby="contact-title" className="pb-24">
+      <Title id="contact">Contact</Title>
+      <div className="reveal mx-auto max-w-xl text-center">
+        <p className="text-lg leading-relaxed">
+          I'm looking for an OJT / internship where I can contribute to real products. If you'd like to chat, my inbox is open.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           {email && (
             <a href={`mailto:${email}`} className="px-btn">
-              <Sprite rows={sprites.coin} scale={2} /> Insert coin
+              ✉ Email Me
             </a>
           )}
           {linkedin && (
-            <a href={linkedin} target="_blank" rel="noreferrer" className="px-btn ghost">LinkedIn</a>
+            <a href={linkedin} target="_blank" rel="noreferrer" className="px-btn ghost">
+              LinkedIn
+            </a>
           )}
         </div>
-        <ul className="mx-auto mt-10 max-w-xl divide-y-2 divide-surface-2 border-y-2 border-surface-2 text-left">
-          {links.map((l) => (
-            <li key={l.label}>
-              <a
-                href={l.href}
-                target={l.href.startsWith('mailto:') ? undefined : '_blank'}
-                rel="noreferrer"
-                className="group flex items-center justify-between gap-4 py-3"
-              >
-                <span className="label text-xs text-muted">{l.label}</span>
-                <span className="truncate text-sm group-hover:text-accent">{l.text} ↗</span>
-              </a>
-            </li>
-          ))}
-        </ul>
       </div>
     </section>
   )
@@ -692,100 +572,6 @@ function CoinRain() {
           <Sprite rows={sprites.coin} scale={c.scale} />
         </span>
       ))}
-    </div>
-  )
-}
-
-/* ───────────── Level-transition "warp" for in-page links ───────────── */
-
-const WORLDS: Record<string, [string, string]> = {
-  top: ['Title screen', 'Start'],
-  stages: ['World 1', 'Projects'],
-  about: ['World 2', 'About me'],
-  inventory: ['World 3', 'Skills'],
-  quests: ['World 4', 'Education'],
-  achievements: ['World 5', 'Certificates'],
-  contact: ['Final stage', 'Contact'],
-}
-const WARP_COLS = 12
-const CLOSE_MS = 330
-const HOLD_MS = 200
-
-/**
- * Clicking any "#section" link plays a retro stage transition: pixel
- * columns drop down, the world name flashes, the page jumps, the columns
- * lift away and the section title wipes in again.
- */
-function Warp() {
-  const [phase, setPhase] = useState<'close' | 'open' | null>(null)
-  const [label, setLabel] = useState<[string, string]>(['', ''])
-  const busy = useRef(false)
-
-  useEffect(() => {
-    const go = (id: string) => {
-      const el = document.getElementById(id)
-      if (!el) return
-      const land = () => {
-        el.scrollIntoView({ behavior: 'instant', block: 'start' })
-        history.pushState(null, '', `#${id}`)
-        el.setAttribute('tabindex', '-1')
-        el.focus({ preventScroll: true })
-      }
-      if (reducedMotion()) {
-        land()
-        return
-      }
-      if (busy.current) return
-      busy.current = true
-      setLabel(WORLDS[id] ?? ['Next stage', id])
-      setPhase('close')
-      warpSound()
-      window.setTimeout(() => {
-        land()
-        // replay the section title's entrance behind the curtain
-        const head = el.querySelector('.wipe')?.closest('.reveal')
-        head?.classList.remove('in')
-        window.setTimeout(() => {
-          setPhase('open')
-          window.setTimeout(() => head?.classList.add('in'), 120)
-        }, HOLD_MS)
-        window.setTimeout(() => {
-          setPhase(null)
-          busy.current = false
-        }, HOLD_MS + CLOSE_MS + WARP_COLS * 20 + 60)
-      }, CLOSE_MS + WARP_COLS * 20)
-    }
-
-    const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-      const a = (e.target as Element).closest<HTMLAnchorElement>('a[href^="#"]')
-      if (!a || a.hasAttribute('data-instant')) return
-      const id = a.getAttribute('href')!.slice(1)
-      if (!document.getElementById(id)) return
-      e.preventDefault()
-      go(id)
-    }
-    document.addEventListener('click', onClick)
-    return () => document.removeEventListener('click', onClick)
-  }, [])
-
-  if (!phase) return null
-  return (
-    <div aria-hidden className="pointer-events-auto fixed inset-0 z-[96] flex">
-      {Array.from({ length: WARP_COLS }, (_, i) => (
-        <span
-          key={i}
-          className={`warp-col h-full flex-1 ${i % 2 ? 'bg-surface' : 'bg-bg'} ${phase === 'close' ? 'warp-close' : 'warp-open'}`}
-          style={{ animationDelay: `${(phase === 'close' ? i : WARP_COLS - 1 - i) * 20}ms` }}
-        />
-      ))}
-      <div className={`absolute inset-0 grid place-items-center text-center ${phase === 'close' ? 'warp-label-in' : 'warp-label-out'}`}>
-        <div>
-          <p className="label text-lg text-yellow">{label[0]}</p>
-          <p className="title-shadow-pop mt-4 font-pixel text-2xl text-ink sm:text-4xl">{label[1].toUpperCase()}</p>
-          <p className="label blink mt-5 text-base text-accent">Ready!</p>
-        </div>
-      </div>
     </div>
   )
 }

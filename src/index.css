@@ -10,65 +10,100 @@
 }
 
 /* ── Palettes ───────────────────────────────────────────────
-   dark  = "Night" (default) — deep navy + cyan
-   light = "Day"             — pale sky + cobalt                */
+   dark  = "Dusk" (default) — deep maroon sky, sun red, jade + gold pops
+   light = "Dawn"           — peach sky, ink silhouettes, red sun       */
 
 :root,
 :root[data-theme='dark'] {
-  --bg: #070d24;
-  --surface: #0f1a3d;
-  --surface-2: #172a5c;
-  --ink: #e8f1ff;
-  --muted: #9fb6e3;
-  --line: #6f9cff;
-  --shadow: #2448c9;
-  --accent: #5cd2ff;
-  --accent-2: #8e9bff;
-  --ok: #4be3c4;
-  --soft: #b8dcff;
-  --yellow: #ffd447;
-  --pink: #ff6fa8;
+  --bg: #13070d;
+  --surface: #22101a;
+  --surface-2: #361725;
+  --ink: #ffeadb;
+  --muted: #e6ae98;
+  --line: #f29b7c;
+  --shadow: #8a2224;
+  --accent: #ff5a3c;
+  --accent-2: #ff9e7a;
+  --ok: #6fd6a0;
+  --soft: #ffc4a8;
+  --yellow: #ffc857;
+  --pink: #ff7aa2;
   --orange: #ff9a4d;
-  --purple: #b18cff;
-  --on-accent: #070d24;
-  --scan: rgba(0, 0, 0, 0.12);
-  --star: #a6c8ff;
+  --purple: #c4a3f5;
+  --on-accent: #13070d;
+  --scan: rgba(0, 0, 0, 0.14);
+  --star: #ffd9c4;
 
-  --sp-k: #070d24;
-  --sp-y: #5cd2ff;
+  /* scenery */
+  --sky-1: #12060d;
+  --sky-2: #3d0f1d;
+  --sky-3: #9a2c26;
+  --sun: #ff4b2b;
+  --moon: #ffe6d2;
+  --moon-shade: #e8b8a2;
+  --glow: rgba(255, 200, 170, 0.22);
+  --cloud: #45223f;
+  --mtn-1: #5c1a27;
+  --mtn-2: #33101b;
+  --mtn-3: #0c0407;
+  --tint-1: #04010a;
+  --tint-2: #1c0a2c;
+  --tint-a: 0.7;
+  --mist: rgba(255, 150, 130, 0.13);
+  --firefly: #ffd27a;
+
+  --sp-k: #13070d;
+  --sp-y: #ffc857;
   --sp-w: #ffffff;
-  --sp-n: #2448c9;
-  --sp-a: #5cd2ff;
-  --sp-c: #8e9bff;
+  --sp-n: #8a2224;
+  --sp-a: #ff5a3c;
+  --sp-c: #ff9e7a;
   color-scheme: dark;
 }
 
 :root[data-theme='light'] {
-  --bg: #e3edff;
-  --surface: #f6f9ff;
-  --surface-2: #d2e1ff;
-  --ink: #0a1a44;
-  --muted: #3a5290;
-  --line: #0a1a44;
-  --shadow: #3a6df0;
-  --accent: #1d5ce0;
-  --accent-2: #4b4fd8;
-  --ok: #0b7f6b;
-  --soft: #1d5ce0;
-  --yellow: #9a6700;
-  --pink: #c4245f;
+  --bg: #fff1e4;
+  --surface: #fff8f1;
+  --surface-2: #ffe0cb;
+  --ink: #2a0d12;
+  --muted: #7a3a33;
+  --line: #2a0d12;
+  --shadow: #d9482c;
+  --accent: #d33a22;
+  --accent-2: #b8452f;
+  --ok: #2b7a57;
+  --soft: #a8321f;
+  --yellow: #9a6100;
+  --pink: #c2255c;
   --orange: #c2410c;
-  --purple: #6d3fd6;
+  --purple: #6b3fa0;
   --on-accent: #ffffff;
-  --scan: rgba(10, 26, 68, 0.035);
-  --star: #3a6df0;
+  --scan: rgba(42, 13, 18, 0.03);
+  --star: rgba(255, 255, 255, 0);
 
-  --sp-k: #0a1a44;
-  --sp-y: #1d5ce0;
+  --sky-1: #ffe7cf;
+  --sky-2: #ffcfa8;
+  --sky-3: #ffad80;
+  --sun: #f2412b;
+  --moon: #fff4ea;
+  --moon-shade: #f0c9b5;
+  --glow: rgba(255, 120, 80, 0.3);
+  --cloud: #fff6ef;
+  --mtn-1: #f0a283;
+  --mtn-2: #c96650;
+  --mtn-3: #2a0d12;
+  --tint-1: #ffb184;
+  --tint-2: #e8714f;
+  --tint-a: 0.45;
+  --mist: rgba(255, 255, 255, 0.4);
+  --firefly: rgba(255, 255, 255, 0.95);
+
+  --sp-k: #2a0d12;
+  --sp-y: #e0a100;
   --sp-w: #ffffff;
-  --sp-n: #0a1a44;
-  --sp-a: #1d5ce0;
-  --sp-c: #4b4fd8;
+  --sp-n: #2a0d12;
+  --sp-a: #d33a22;
+  --sp-c: #ff9e7a;
   color-scheme: light;
 }
 
@@ -218,6 +253,18 @@ svg.sprite {
     font-size: 0.85rem;
   }
 
+  /* one emphasised word in a headline */
+  .accent-word {
+    font-family: var(--font-label);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1.32em;
+    line-height: 0.95;
+    letter-spacing: 0.01em;
+    color: var(--pink);
+    text-shadow: 3px 3px 0 var(--shadow);
+  }
+
   .label {
     font-family: var(--font-label);
     font-size: 0.875rem;
@@ -334,7 +381,7 @@ svg.sprite {
 
 /* Pixel-art cursors */
 html {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='%23070d24' d='M0 0h1v1H0zM0 1h2v1H0zM0 2h3v1H0zM0 3h4v1H0zM0 4h5v1H0zM0 5h6v1H0zM0 6h7v1H0zM0 7h4v1H0zM0 8h2v1H0zM4 7h2v2H4zM0 9h1v1H0zM5 9h2v2H5z'/%3E%3Cpath fill='%235cd2ff' d='M1 2h1v5H1zM2 3h1v4H2zM3 4h1v3H3zM4 5h1v2H4zM5 6h1v1H5z'/%3E%3Cpath fill='%23ffffff' d='M1 1h1v1H1z'/%3E%3C/svg%3E")
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='%2313070d' d='M0 0h1v1H0zM0 1h2v1H0zM0 2h3v1H0zM0 3h4v1H0zM0 4h5v1H0zM0 5h6v1H0zM0 6h7v1H0zM0 7h4v1H0zM0 8h2v1H0zM4 7h2v2H4zM0 9h1v1H0zM5 9h2v2H5z'/%3E%3Cpath fill='%23ff5a3c' d='M1 2h1v5H1zM2 3h1v4H2zM3 4h1v3H3zM4 5h1v2H4zM5 6h1v1H5z'/%3E%3Cpath fill='%23ffffff' d='M1 1h1v1H1z'/%3E%3C/svg%3E")
       0 0,
     auto;
 }
@@ -342,7 +389,7 @@ a,
 button,
 summary,
 [role='button'] {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='%23070d24' d='M3 0h2v1H3zM2 1h1v5H2zM5 1h1v3H5zM6 3h4v1H6zM10 4h1v5h-1zM0 5h2v1H0zM0 6h1v2H0zM1 8h1v1H1zM2 9h1v1H2zM3 10h6v1H3zM9 9h1v1H9z'/%3E%3Cpath fill='%23ffd447' d='M3 1h2v5H3zM5 4h5v5H5zM1 6h2v2H1zM2 8h3v1H2zM3 9h6v1H3zM3 6h2v2H3zM2 7h1v1H2z'/%3E%3C/svg%3E")
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='%2313070d' d='M3 0h2v1H3zM2 1h1v5H2zM5 1h1v3H5zM6 3h4v1H6zM10 4h1v5h-1zM0 5h2v1H0zM0 6h1v2H0zM1 8h1v1H1zM2 9h1v1H2zM3 10h6v1H3zM9 9h1v1H9z'/%3E%3Cpath fill='%23ffd447' d='M3 1h2v5H3zM5 4h5v5H5zM1 6h2v2H1zM2 8h3v1H2zM3 9h6v1H3zM3 6h2v2H3zM2 7h1v1H2z'/%3E%3C/svg%3E")
       6 1,
     pointer;
 }
@@ -420,4 +467,622 @@ summary,
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* ── Scenery ───────────────────────────────────────────────── */
+.cloud {
+  left: 0;
+  will-change: transform;
+  animation: drift linear infinite;
+  will-change: transform;
+}
+@keyframes drift {
+  from { transform: translateX(-200px); }
+  to { transform: translateX(calc(100vw + 40px)); }
+}
+
+/* Day/Night: the sun/moon dips behind the mountains, the other rises */
+.c-set {
+  animation: c-set 0.62s steps(10) forwards;
+}
+.c-rise {
+  animation: c-rise 0.95s steps(14) both;
+}
+@keyframes c-set {
+  to { transform: translate(-8vw, 75vh); }
+}
+@keyframes c-rise {
+  from { transform: translate(8vw, 75vh); }
+  to { transform: none; }
+}
+
+/* ── Polish animations ─────────────────────────────────────── */
+
+/* Hero name: letters drop in one by one */
+.drop-in {
+  display: inline-block;
+  animation: drop-in 0.45s steps(5) both;
+}
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.7em);
+  }
+}
+
+/* Skill tags pop in, staggered by --i, once their panel is revealed */
+.reveal .chip-pop {
+  opacity: 0;
+}
+.reveal.in .chip-pop {
+  animation: chip-pop 0.3s steps(3) calc(var(--i) * 28ms + 0.25s) both;
+}
+@keyframes chip-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Light sweep across project covers on hover */
+.shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.28) 50%, transparent 65%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.shine:hover::after {
+  transform: translateX(120%);
+  transition: transform 0.7s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop-in,
+  .reveal .chip-pop {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* ── Kigo-inspired editorial layer (kept 8-bit) ────────────── */
+
+/* frosted panel for the floating nav, stat chips etc. */
+.glass {
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+}
+
+/* hanko seal */
+.stamp {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--accent);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    inset 0 0 0 4px transparent,
+    inset 0 0 0 5px var(--accent);
+  transform: rotate(-8deg);
+  line-height: 1;
+  opacity: 0.92;
+}
+.stamp.h-20 {
+  box-shadow:
+    inset 0 0 0 4px var(--accent),
+    inset 0 0 0 8px transparent,
+    inset 0 0 0 10px var(--accent);
+}
+.stamp-in {
+  animation: stamp-in 0.5s steps(5) 0.3s both;
+}
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: rotate(-20deg) scale(2.2);
+  }
+  to {
+    opacity: 0.92;
+    transform: rotate(-8deg) scale(1);
+  }
+}
+
+/* outlined button with a seal, like a signed form */
+.stamp-btn {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  box-shadow:
+    0 -3px 0 0 var(--line),
+    0 3px 0 0 var(--line),
+    -3px 0 0 0 var(--line),
+    3px 0 0 0 var(--line);
+  margin: 3px;
+  transition: transform 0.1s steps(1), background-color 0.15s;
+}
+.stamp-btn:hover {
+  transform: translateY(-2px);
+  background: var(--surface-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp-in {
+    animation: none;
+  }
+}
+
+/* ── Calm layer: translucent pixel cards + tag chips ──────── */
+
+.card {
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow:
+    0 -2px 0 0 color-mix(in srgb, var(--line) 45%, transparent),
+    0 2px 0 0 color-mix(in srgb, var(--line) 45%, transparent),
+    -2px 0 0 0 color-mix(in srgb, var(--line) 45%, transparent),
+    2px 0 0 0 color-mix(in srgb, var(--line) 45%, transparent);
+}
+.lift-soft {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.lift-soft:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 -2px 0 0 var(--line),
+    0 2px 0 0 var(--line),
+    -2px 0 0 0 var(--line),
+    2px 0 0 0 var(--line),
+    6px 6px 0 0 var(--shadow);
+}
+/* .reveal sets transform:none once shown; keep the hover lift working */
+.reveal.in.lift-soft:hover {
+  transform: translateY(-4px);
+}
+
+.chip {
+  font-family: var(--font-label);
+  font-size: 0.95rem;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  padding: 0.3rem 0.55rem;
+  color: var(--ok);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ok) 65%, transparent);
+}
+.chip.solid {
+  color: var(--on-accent);
+  background: var(--ok);
+  box-shadow: none;
+}
+.chip.muted {
+  color: var(--muted);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--muted) 55%, transparent);
+}
+.chip.accent {
+  color: var(--accent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* ── Cursor follower ───────────────────────────────────────── */
+.cursor-follow {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 97;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.cursor-ring {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 -2px 0 0 var(--accent),
+    0 2px 0 0 var(--accent),
+    -2px 0 0 0 var(--accent),
+    2px 0 0 0 var(--accent);
+  transition:
+    width 0.2s ease,
+    height 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.cursor-label {
+  font-family: var(--font-label);
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.cursor-follow[data-mode='link'] .cursor-ring {
+  width: 46px;
+  height: 46px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.cursor-follow[data-mode='view'] .cursor-ring {
+  width: 74px;
+  height: 74px;
+  background: var(--accent);
+}
+.cursor-follow[data-mode='view'] .cursor-label {
+  opacity: 1;
+}
+.cursor-follow.press .cursor-ring {
+  width: 22px;
+  height: 22px;
+}
+
+/* ── Card spotlight + tilt ─────────────────────────────────── */
+.spot {
+  position: relative;
+  isolation: isolate;
+}
+.spot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.spot:hover::before {
+  opacity: 1;
+}
+.reveal.in.tilt.lift-soft:hover {
+  transform: perspective(900px) translateY(-6px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+}
+
+/* ── Scroll extras ─────────────────────────────────────────── */
+/* education timeline draws downward once revealed */
+.draw-line {
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 1.1s steps(12) 0.2s;
+}
+.in .draw-line {
+  transform: scaleY(1);
+}
+/* filter tabs */
+.tab {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.8rem;
+  color: var(--muted);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--line) 40%, transparent);
+  transition: color 0.15s, background-color 0.15s;
+}
+.tab:hover {
+  color: var(--ink);
+}
+.tab[aria-pressed='true'] {
+  color: var(--on-accent);
+  background: var(--accent);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-line {
+    transform: none;
+  }
+}
+
+
+/* ── Project spotlight rows ───────────────────────────────── */
+.app-window {
+  margin: 4px;
+  background: var(--surface);
+  box-shadow:
+    0 -3px 0 0 var(--line),
+    0 3px 0 0 var(--line),
+    -3px 0 0 0 var(--line),
+    3px 0 0 0 var(--line),
+    10px 10px 0 0 var(--c, var(--shadow));
+  transition: box-shadow 0.25s ease;
+}
+.app-window:hover {
+  box-shadow:
+    0 -3px 0 0 var(--line),
+    0 3px 0 0 var(--line),
+    -3px 0 0 0 var(--line),
+    3px 0 0 0 var(--line),
+    14px 14px 0 0 var(--c, var(--shadow));
+}
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-bottom: 3px solid var(--line);
+}
+.fade-swap {
+  animation: fade-swap 0.35s steps(4) both;
+}
+@keyframes fade-swap {
+  from {
+    opacity: 0.2;
+  }
+}
+/* big outlined index number */
+.outline-num {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--c);
+  text-shadow: 4px 4px 0 color-mix(in srgb, var(--c) 30%, transparent);
+}
+
+/* ── Cursor spark trail ────────────────────────────────────── */
+.spark-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  pointer-events: none;
+  overflow: hidden;
+}
+.spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  animation: spark 0.45s steps(5) forwards;
+}
+.spark.big {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  animation: spark-pop 0.55s steps(6) forwards;
+}
+@keyframes spark {
+  to {
+    transform: translate(var(--dx), -10px) scale(0);
+    opacity: 0;
+  }
+}
+@keyframes spark-pop {
+  to {
+    transform: translate(calc(var(--dx) * 3), calc(var(--dx) * -2 - 24px)) scale(0);
+    opacity: 0;
+  }
+}
+
+/* ── Hover zoom + overlay (project windows, certificates) ──── */
+.zoom-card .zoom-img {
+  transition: transform 0.45s ease;
+}
+.zoom-card:hover .zoom-img,
+.zoom-card:focus-visible .zoom-img {
+  transform: scale(1.07);
+}
+.zoom-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.zoom-overlay > span {
+  transform: translateY(8px);
+  transition: transform 0.25s ease;
+}
+.zoom-card:hover .zoom-overlay,
+.zoom-card:focus-visible .zoom-overlay {
+  opacity: 1;
+}
+.zoom-card:hover .zoom-overlay > span,
+.zoom-card:focus-visible .zoom-overlay > span {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .zoom-card:hover .zoom-img {
+    transform: none;
+  }
+}
+
+/* ── Background life ─────────────────────────────────────── */
+.mist {
+  display: block;
+  background: radial-gradient(ellipse at center, var(--mist) 0%, transparent 70%);
+  will-change: transform;
+  animation: mist-drift linear infinite alternate;
+}
+@keyframes mist-drift {
+  from { transform: translateX(-8%); }
+  to { transform: translateX(8%); }
+}
+.lantern {
+  position: relative;
+  will-change: transform;
+  animation: lantern-bob ease-in-out infinite alternate;
+}
+@keyframes lantern-bob {
+  from { transform: translate(-3px, 0) rotate(-3deg); }
+  to { transform: translate(3px, -8px) rotate(3deg); }
+}
+.lantern-glow {
+  position: absolute;
+  inset: -120%;
+  background: radial-gradient(closest-side, rgba(255, 150, 70, 0.45), transparent);
+  animation: flicker 1.6s steps(3) infinite alternate;
+}
+@keyframes flicker {
+  from { opacity: 0.65; }
+  to { opacity: 1; }
+}
+.firefly {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -5px 0 0 -5px;
+  background: radial-gradient(circle, var(--firefly) 0 2px, color-mix(in srgb, var(--firefly) 35%, transparent) 3px, transparent 7px);
+  will-change: transform, opacity;
+  animation:
+    firefly-wander ease-in-out infinite alternate,
+    firefly-blink ease-in-out infinite alternate;
+}
+@keyframes firefly-wander {
+  to { transform: translate(var(--fx), var(--fy)); }
+}
+@keyframes firefly-blink {
+  0%, 30% { opacity: 0.1; }
+  100% { opacity: 0.95; }
+}
+.meteor {
+  position: absolute;
+  width: 90px;
+  height: 2px;
+  /* bright head on the right, fading tail behind it */
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.5) 60%, #fff);
+  transform: rotate(24deg);
+  transform-origin: left center;
+  opacity: 0;
+  animation: meteor 0.95s ease-in forwards;
+}
+.meteor::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -1px;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.8);
+}
+@keyframes meteor {
+  0% { opacity: 0; transform: rotate(24deg) translateX(0); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(24deg) translateX(280px); }
+}
+.glow-pulse {
+  animation: glow-pulse 5s ease-in-out infinite alternate;
+}
+@keyframes glow-pulse {
+  from { transform: scale(0.94); opacity: 0.85; }
+  to { transform: scale(1.06); opacity: 1; }
+}
+.sway {
+  animation: sway 6s ease-in-out infinite alternate;
+}
+@keyframes sway {
+  from { transform: skewX(-1.2deg); }
+  to { transform: skewX(1.2deg); }
+}
+
+/* day-mode birds: two-frame wing flap */
+.bird {
+  position: relative;
+  display: block;
+}
+.bird .bird-up {
+  animation: wing-a var(--flap-d, 0.4s) steps(1) infinite;
+}
+.bird .bird-down {
+  opacity: 0;
+  animation: wing-b var(--flap-d, 0.4s) steps(1) infinite;
+}
+@keyframes wing-a {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes wing-b {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+/* Day/Night: lanterns sink with the moon, birds fly off; then the other set arrives */
+.lanterns-out {
+  animation: lanterns-out 0.62s ease-in forwards;
+}
+@keyframes lanterns-out {
+  to {
+    transform: translateY(70vh);
+    opacity: 0;
+  }
+}
+.lanterns-in {
+  animation: lanterns-in 1.1s ease-out both;
+}
+@keyframes lanterns-in {
+  from {
+    transform: translateY(60vh);
+    opacity: 0;
+  }
+}
+.birds-out {
+  animation: birds-out 0.62s ease-in forwards;
+}
+@keyframes birds-out {
+  to {
+    transform: translate(35vw, -45vh);
+    opacity: 0;
+  }
+}
+.birds-in {
+  animation: birds-in 1.1s ease-out both;
+}
+@keyframes birds-in {
+  from {
+    transform: translate(-40vw, 12vh);
+    opacity: 0;
+  }
+}
+
+.bird-bob {
+  animation: bird-bob ease-in-out infinite alternate;
+}
+@keyframes bird-bob {
+  from { transform: translateY(-5px); }
+  to { transform: translateY(5px); }
+}
+
+/* ── Loading screen ────────────────────────────────────────── */
+.boot-lantern {
+  position: relative;
+  width: 12px;
+  height: 16px;
+  background: color-mix(in srgb, var(--mtn-3) 70%, #6b2a22);
+  box-shadow:
+    0 -2px 0 0 #2a0d12,
+    0 2px 0 0 #2a0d12,
+    -2px 0 0 0 #2a0d12,
+    2px 0 0 0 #2a0d12;
+  opacity: 0.55;
+  transition: background-color 0.2s steps(2), opacity 0.2s steps(2);
+}
+.boot-lantern.on {
+  background: linear-gradient(#ff9a3d, #e2432f);
+  opacity: 1;
+  box-shadow:
+    0 -2px 0 0 #4a1418,
+    0 2px 0 0 #4a1418,
+    -2px 0 0 0 #4a1418,
+    2px 0 0 0 #4a1418,
+    0 0 18px 4px rgba(255, 140, 60, 0.55);
+  animation: lantern-light 0.3s steps(3);
+}
+@keyframes lantern-light {
+  from { transform: translateY(4px) scale(0.8); }
+}
+.door-left {
+  animation: door-left 0.8s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+.door-right {
+  animation: door-right 0.8s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+@keyframes door-left {
+  to { transform: translateX(-52%); }
+}
+@keyframes door-right {
+  to { transform: translateX(52%); }
 }
