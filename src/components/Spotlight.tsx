@@ -1,65 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { Project } from '../data/portfolio'
 import { MediaView } from './MediaView'
 import { ProjectDialog } from './ProjectCard'
 
 const COLORS = ['var(--yellow)', 'var(--pink)', 'var(--ok)', 'var(--orange)', 'var(--purple)']
-const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /**
- * Projects as alternating "spotlight" rows: a pixel app-window with the
- * screenshots on one side, the story on the other. Rows slide in from
- * their side, the window drifts a little as you scroll (parallax), and
- * hovering the window flips through the screenshots.
+ * Projects as alternating rows: a pixel app-window with the screenshot on
+ * one side, the details on the other. Rows fade in as you reach them.
  */
 export function Spotlights({ projects }: { projects: Project[] }) {
-  const frames = useRef<(HTMLDivElement | null)[]>([])
-
-  // one scroll listener drives the parallax for every row
-  useEffect(() => {
-    if (reduced()) return
-    let queued = false
-    const update = () => {
-      queued = false
-      const vh = window.innerHeight
-      // read all positions first (measured on the un-transformed wrapper), then write
-      const els = frames.current.filter(Boolean) as HTMLDivElement[]
-      const rects = els.map((el) => (el.parentElement ?? el).getBoundingClientRect())
-      els.forEach((el, i) => {
-        const r = rects[i]
-        if (r.bottom < -200 || r.top > vh + 200) return
-        const offset = (r.top + r.height / 2 - vh / 2) / vh // -1 … 1 around the centre
-        el.style.transform = `translate3d(0, ${(offset * -28).toFixed(1)}px, 0)`
-      })
-    }
-    const on = () => {
-      if (!queued) {
-        queued = true
-        requestAnimationFrame(update)
-      }
-    }
-    update()
-    window.addEventListener('scroll', on, { passive: true })
-    window.addEventListener('resize', on)
-    return () => {
-      window.removeEventListener('scroll', on)
-      window.removeEventListener('resize', on)
-    }
-  }, [])
-
   return (
-    <div className="mx-auto max-w-6xl space-y-28 sm:space-y-36">
+    <div className="mx-auto max-w-6xl space-y-24 sm:space-y-32">
       {projects.map((p, i) => (
-        <Row
-          key={p.title}
-          project={p}
-          index={i}
-          flip={i % 2 === 1}
-          color={COLORS[i % COLORS.length]}
-          frameRef={(el) => {
-            frames.current[i] = el
-          }}
-        />
+        <Row key={p.title} project={p} index={i} flip={i % 2 === 1} color={COLORS[i % COLORS.length]} />
       ))}
     </div>
   )
@@ -70,13 +24,11 @@ function Row({
   index,
   flip,
   color,
-  frameRef,
 }: {
   project: Project
   index: number
   flip: boolean
   color: string
-  frameRef: (el: HTMLDivElement | null) => void
 }) {
   const media = p.media ?? []
   const [shot, setShot] = useState(0)
@@ -93,7 +45,7 @@ function Row({
     <article className="grid items-center gap-10 lg:grid-cols-[1.25fr_1fr] lg:gap-14" aria-labelledby={`sp-${index}`}>
       {/* screenshot window */}
       <div className={`reveal ${flip ? 'from-right lg:order-2' : 'from-left'}`}>
-        <div ref={frameRef} className="will-change-transform">
+        <div>
           <div className="app-window" style={{ '--c': color } as React.CSSProperties}>
             <div className="app-bar">
               <span className="flex gap-1.5" aria-hidden>

@@ -4,15 +4,12 @@ import { Scene } from './components/Scene'
 import { Sprite, sprites } from './components/Sprite'
 import {
   addScore,
-  BootScreen,
   reducedMotion,
-  SparkTrail,
   useActiveSection,
   useKonami,
   useReveal,
   useScrollFade,
   useScrollBar,
-  useTilt,
 } from './components/effects'
 import { blip, setSfx, startMusic, stopMusic } from './components/chiptune'
 import { certifications, education, featured, others, profile, skills } from './data/portfolio'
@@ -28,7 +25,6 @@ const NAV_IDS = NAV.map((n) => n.id)
 
 export default function App() {
   useReveal()
-  useTilt()
   const [toast, setToast] = useState<string | null>(null)
   const [rain, setRain] = useState(0)
 
@@ -46,9 +42,7 @@ export default function App() {
 
   return (
     <>
-      <BootScreen />
       <Scene />
-      <SparkTrail />
       <a
         href="#projects"
         className="label sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[90] focus:bg-accent focus:px-3 focus:py-2 focus:text-on-accent"
@@ -154,9 +148,9 @@ function Header() {
 function SoundToggle() {
   const [on, setOn] = useState(() => {
     try {
-      return localStorage.getItem('sound') !== 'off'
+      return localStorage.getItem('sound') === 'on'
     } catch {
-      return true
+      return false
     }
   })
 
@@ -240,7 +234,7 @@ function ThemeToggle() {
       type="button"
       disabled={busy}
       onClick={() => {
-        if (reducedMotion() || window.scrollY > window.innerHeight * 1.5) {
+        if (reducedMotion()) {
           apply()
           return
         }
@@ -252,14 +246,26 @@ function ThemeToggle() {
         }, 620)
       }}
       aria-label={`Switch to ${next === 'light' ? 'day' : 'night'} mode`}
-      className="px-thin label flex h-8 items-center text-sm"
+      className="px-thin label relative flex h-8 items-center text-sm"
     >
-      <span aria-hidden className={`grid h-full w-8 place-items-center ${theme === 'dark' ? 'bg-accent text-on-accent' : 'text-muted'}`}>
-        ☾
-      </span>
-      <span aria-hidden className={`grid h-full w-8 place-items-center ${theme === 'light' ? 'bg-accent text-on-accent' : 'text-muted'}`}>
-        ☀
-      </span>
+      {/* sliding highlight: moves to the new side the moment you click */}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-8 bg-accent transition-transform duration-500 ease-in-out"
+        style={{ transform: `translateX(${(busy ? next : theme) === 'light' ? '100%' : '0'})` }}
+      />
+      {(['dark', 'light'] as const).map((t) => {
+        const on = (busy ? next : theme) === t
+        return (
+          <span
+            key={t}
+            aria-hidden
+            className={`relative grid h-full w-8 place-items-center transition-colors duration-500 ${on ? 'text-on-accent' : 'text-muted'}`}
+          >
+            {t === 'dark' ? '☾' : '☀'}
+          </span>
+        )
+      })}
     </button>
   )
 }
@@ -279,19 +285,20 @@ function Hero() {
   const fade = useScrollFade<HTMLDivElement>()
   return (
     <section id="top" className="flex min-h-[calc(100svh-4rem)] flex-col justify-center pb-24 pt-10">
-      <div ref={fade} className="max-w-2xl">
+      <div ref={fade} className="max-w-3xl">
         <p className="label flex items-center gap-2.5 text-base text-ok">
           <span className="blink inline-block h-2.5 w-2.5 bg-ok" aria-hidden />
           {profile.status}
         </p>
-        <p className="label mt-6 text-xl text-muted">Hi, I'm {profile.name}</p>
-        <h1 className="title-shadow mt-4 font-pixel text-[clamp(1.9rem,5.5vw,3.5rem)] leading-[1.2]">
-          Aspiring
+        <p className="label mt-8 text-xl text-muted">Hi, I'm</p>
+        <h1 className="title-shadow mt-3 font-pixel text-[clamp(1.3rem,4.6vw,3rem)] leading-[1.3]">
+          <span className="whitespace-nowrap">Jazpher Neil P.</span>
           <br />
-          <span className="text-accent">Software Engineer</span>
+          <span className="text-accent">Quirante</span>
         </h1>
         <p className="mt-7 max-w-xl text-lg leading-relaxed text-ink/90">
-          I build functional, user-focused applications — from full-stack web platforms to Android apps and games.
+          I'm a 4th-year IT student at CIT‑U who builds functional, user-focused applications — from full-stack web
+          platforms to Android apps and games.
         </p>
         <div className="mt-8 flex flex-wrap gap-4">
           <a href="#projects" className="px-btn">
@@ -395,8 +402,6 @@ function About() {
           ))}
           <dl className="label grid grid-cols-2 gap-x-6 gap-y-2 pt-2 text-sm">
             {[
-              ['School', 'CIT-U · BS IT'],
-              ['Year', '4th year'],
               ['Based in', profile.location],
               ['Seeking', 'OJT / internship'],
             ].map(([k, v]) => (
@@ -409,25 +414,77 @@ function About() {
         </div>
       </div>
 
-      {/* education + certifications, side by side */}
-      <div className="mx-auto mt-8 grid max-w-5xl gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-        <div className="card reveal flex flex-col p-6 sm:p-8">
-          <h3 className="label mb-5 text-lg text-ok">Education</h3>
-          <ol className="relative flex flex-1 flex-col justify-between gap-5 pl-5">
-            <span aria-hidden className="draw-line absolute bottom-0 left-0 top-0 w-0.5 bg-line/50" />
-            {education.map((e, i) => (
-              <li key={e.level} className="relative">
-                <span aria-hidden className={`absolute -left-[1.6rem] top-1.5 h-2.5 w-2.5 ${i === 0 ? 'bg-ok' : 'bg-line'}`} />
-                <p className="label text-sm text-muted">{e.years}</p>
-                <p className="font-medium">{e.school}</p>
-                <p className="text-sm text-muted">{e.detail || e.level}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
+      <Education />
+      <div className="mx-auto mt-8 max-w-5xl">
         <Certifications />
       </div>
     </section>
+  )
+}
+
+/** College only: a degree card with the key facts, plus coursework and what's next. */
+function Education() {
+  const college = education[0]
+  const facts: [string, string][] = [
+    ['School', college.school],
+    ['Standing', 'Fourth-year student'],
+    ['Academic years', college.years],
+    ['Expected graduation', college.years.split('–').pop()!.trim()],
+    ['OJT', 'Looking for an OJT / internship placement'],
+  ]
+  // taken from the courses my projects were built for
+  const coursework = [
+    'Object-oriented programming (Java)',
+    'Web development & information management',
+    'Application development & systems integration',
+    'Mobile app development (Android)',
+    'Capstone project',
+  ]
+  const next = ['OJT / internship', 'Junior software developer roles', 'Full-stack web & mobile development']
+
+  return (
+    <div className="mx-auto mt-8 grid max-w-5xl gap-8 lg:grid-cols-[1.15fr_1fr]">
+      <div className="card reveal p-6 sm:p-8">
+        <p className="label text-sm text-ok">Education · Degree</p>
+        <h3 className="mt-3 font-pixel text-base leading-relaxed sm:text-lg">
+          Bachelor of Science in
+          <br />
+          Information Technology
+        </h3>
+        <dl className="mt-6 space-y-4 border-t-2 border-line/30 pt-6">
+          {facts.map(([k, v]) => (
+            <div key={k}>
+              <dt className="label text-xs tracking-[0.12em] text-muted">{k}</dt>
+              <dd className="mt-0.5 text-[15px]">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      <div className="grid gap-8">
+        <div className="card reveal p-6 sm:p-8">
+          <p className="label text-sm tracking-[0.12em] text-muted">Coursework</p>
+          <ul className="mt-4 space-y-2.5 text-[15px]">
+            {coursework.map((c) => (
+              <li key={c} className="flex gap-3">
+                <span aria-hidden className="text-accent">
+                  /
+                </span>
+                {c}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="card reveal p-6 sm:p-8">
+          <p className="label text-sm tracking-[0.12em] text-muted">After graduation</p>
+          <ul className="mt-4 space-y-2.5 text-[15px]">
+            {next.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -442,7 +499,7 @@ function Certifications() {
   return (
     <div id="certs" className="card reveal p-6 sm:p-8">
       <h3 className="label mb-5 text-lg text-ok">Certifications</h3>
-      <ul className="space-y-4">
+      <ul className="grid gap-x-10 gap-y-4 md:grid-cols-2">
         {certifications.map((c) => (
           <li key={c.title} className="flex items-center gap-4">
             {/* small thumbnail: zooms + overlay on hover, opens full size on click */}

@@ -260,6 +260,9 @@ export function Scene() {
       if (tint) tint.style.opacity = (prog * tintA).toFixed(3)
       const stars = el.querySelector<HTMLElement>('[data-stars]')
       if (stars) stars.style.opacity = (0.55 + prog * 0.45).toFixed(3)
+      // the sun/moon fades as you scroll so it never sits behind text
+      const sky = el.querySelector<HTMLElement>('[data-celestial]')
+      if (sky) sky.style.opacity = (1 - Math.min(1, v / vh) * 0.8).toFixed(3)
       const dim = el.querySelector<HTMLElement>('[data-dim]')
       if (dim) dim.style.opacity = Math.min(0.32, (v / vh) * 0.3).toFixed(3)
     }
@@ -312,11 +315,10 @@ export function Scene() {
       <div data-stars className="absolute inset-0" style={{ opacity: 0.55 }}>
         <Starfield className="absolute inset-0" />
       </div>
-      {night && !small && <ShootingStars />}
 
       {/* sun (day) / moon (night) + glow — barely moves, like it's far away */}
       <div
-        className="absolute"
+        className={`absolute ${motion ? 'celestial-switching' : ''}`}
         style={{
           width: sunPx * PX,
           height: sunPx * PX,
@@ -324,6 +326,7 @@ export function Scene() {
           top: small ? '10%' : '13%',
         }}
         data-par="0.05"
+        data-celestial
       >
         <div className={`absolute inset-0 ${motion}`}>
           <div className="glow-pulse absolute -inset-1/2 rounded-full" style={{ background: 'radial-gradient(closest-side, var(--glow), transparent)' }} />
@@ -342,25 +345,22 @@ export function Scene() {
       {/* mountain ranges, far → near, with mist between them (parallax) */}
       <div data-par="0.06" className="absolute inset-x-0 bottom-0 h-full will-change-transform">
         <Range cols={cols} rows={56} seed={1.3} base={30} amp={14} fill="var(--mtn-1)" />
-        <span className="mist absolute inset-x-[-20%] bottom-[150px] h-24" style={{ animationDuration: '70s' }} />
       </div>
 
-      {/* lanterns (night) / birds (day) leave and arrive with the moon and sun */}
-      <div className={`absolute inset-0 ${flyerMotion(motion, night)}`}>
-        {night ? <Lanterns small={small} /> : <Birds small={small} />}
+      {/* a few lanterns (night) / birds (day); they leave and return with the moon and sun */}
+      <div className={`absolute inset-0 ${motion === 'c-set' ? (night ? 'lanterns-out' : 'birds-out') : motion === 'c-rise' ? (night ? 'lanterns-in' : 'birds-in') : ''}`}>
+        <Flyers night={night} small={small} />
       </div>
 
       <div data-par="0.13" className="absolute inset-x-0 bottom-0 h-full will-change-transform">
         <Range cols={cols} rows={40} seed={4.1} base={18} amp={9} fill="var(--mtn-2)" />
         <PixelSprite rows={TORII} fill="var(--mtn-2)" className="absolute" style={{ left: small ? '6%' : '46%', bottom: 9 * PX }} />
-        <span className="mist absolute inset-x-[-20%] bottom-[70px] h-20" style={{ animationDuration: '52s', animationDirection: 'alternate-reverse' }} />
       </div>
 
-      <Fireflies small={small} />
 
       <div data-par="0.22" className="absolute inset-x-0 bottom-0 h-full will-change-transform">
         <Range cols={cols} rows={24} seed={7.7} base={9} amp={5} fill="var(--mtn-3)" />
-        <PixelSprite rows={BONSAI} fill="var(--mtn-3)" className="sway absolute origin-bottom" style={{ right: small ? '-4%' : '6%', bottom: 4 * PX }} />
+        <PixelSprite rows={BONSAI} fill="var(--mtn-3)" className="absolute" style={{ right: small ? '-4%' : '6%', bottom: 4 * PX }} />
       </div>
 
       {/* readability dimmer */}
@@ -369,11 +369,20 @@ export function Scene() {
   )
 }
 
-/* ── Sky lanterns ─────────────────────────────────────────── */
+/* ── Ambient flyers: a few lanterns at night, a few birds by day ─────────
+   Kept deliberately small and sparse so they read as background detail.
+   They run on the browser's animation engine (off the main thread). */
 
-// k frame · r paper · o lit paper · y flame/tassel
 const LANTERN = ['..kkk..', '.kkkkk.', 'krrrrrk', 'krooork', 'kroyork', 'krooork', 'krrrrrk', '.kkkkk.', '...k...', '...y...']
 const LANTERN_COLORS: Record<string, string> = { k: '#4a1418', r: '#d93a26', o: '#ff8a3d', y: '#ffd27a' }
+const BIRD_UP = ['xx.....xx', '..x...x..', '...xxx...', '....x....']
+const BIRD_DOWN = ['....x....', '...xxx...', '..x...x..', '.x.....x.']
+
+/** Deterministic pseudo-random so things sit in the same places every visit. */
+const rand = (n: number) => {
+  const x = Math.sin(n * 12.9898) * 43758.5453
+  return x - Math.floor(x)
+}
 
 function MultiSprite({ rows, colors, scale }: { rows: string[]; colors: Record<string, string>; scale: number }) {
   const paths = useMemo(() => {
@@ -381,8 +390,7 @@ function MultiSprite({ rows, colors, scale }: { rows: string[]; colors: Record<s
     rows.forEach((row, y) => {
       for (let x = 0; x < row.length; x++) {
         const c = row[x]
-        if (c === '.') continue
-        out[c] = (out[c] ?? '') + `M${x} ${y}h1v1h-1z`
+        if (c !== '.') out[c] = (out[c] ?? '') + `M${x} ${y}h1v1h-1z`
       }
     })
     return out
@@ -396,283 +404,71 @@ function MultiSprite({ rows, colors, scale }: { rows: string[]; colors: Record<s
   )
 }
 
-/** Deterministic pseudo-random so lanterns sit in the same places every visit. */
-const rand = (n: number) => {
-  const x = Math.sin(n * 12.9898) * 43758.5453
-  return x - Math.floor(x)
-}
-
-/**
- * Shared "scroll gives it a boost" helper for compositor-driven animations.
- * Each animation runs on the browser's animation engine (off the main thread);
- * we only touch it while you're scrolling, by speeding up its playback rate,
- * then let it ease back to normal speed and go idle again.
- */
-function useScrollBoost(anims: React.RefObject<{ a: Animation; boost: number }[]>, maxRate: number) {
-  useEffect(() => {
-    if (reducedMotion()) return
-    let last = window.scrollY
-    let lift = 0
-    let raf = 0
-    const step = () => {
-      lift *= 0.9
-      for (const { a, boost } of anims.current ?? []) a.updatePlaybackRate(1 + Math.min(lift, maxRate) * boost)
-      raf = lift > 0.02 ? requestAnimationFrame(step) : 0
-      if (!raf) for (const { a } of anims.current ?? []) a.updatePlaybackRate(1)
-    }
-    const onScroll = () => {
-      const y = window.scrollY
-      lift = Math.min(maxRate, lift + Math.abs(y - last) / 60)
-      last = y
-      if (!raf) raf = requestAnimationFrame(step)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      cancelAnimationFrame(raf)
-      window.removeEventListener('scroll', onScroll)
-    }
-  }, [anims, maxRate])
-}
-
-/** Floating lanterns: drift slowly up from behind the hills; scrolling makes them rise faster. */
-function Lanterns({ small }: { small: boolean }) {
+function Flyers({ night, small }: { night: boolean; small: boolean }) {
   const refs = useRef<(HTMLDivElement | null)[]>([])
-  const anims = useRef<{ a: Animation; boost: number }[]>([])
-  const count = small ? 3 : 5
-  const lanterns = useMemo(
+  const count = small ? 2 : 3
+  const items = useMemo(
     () =>
-      Array.from({ length: count }, (_, i) => {
-        const depth = rand(i + 1) // 0 far … 1 near
-        return {
-          left: 3 + rand(i + 21) * 90,
-          depth,
-          scale: Math.round(3 + depth * 3),
-          opacity: 0.5 + depth * 0.45,
-          speed: 14 + depth * 22, // px per second while idle
-          start: rand(i + 41), // how far through its first trip it starts
-          bob: 3 + rand(i + 61) * 3,
-          flicker: 1.2 + rand(i + 81) * 1.2,
-        }
-      }),
-    [count],
-  )
-
-  useEffect(() => {
-    const build = () => {
-      for (const { a } of anims.current) a.cancel()
-      anims.current = []
-      const h = window.innerHeight
-      lanterns.forEach((l, i) => {
-        const el = refs.current[i]
-        if (!el) return
-        const from = h + 60
-        const to = -140
-        if (reducedMotion()) {
-          el.style.transform = `translate3d(0, ${(to + (from - to) * (1 - l.start)).toFixed(0)}px, 0)`
-          return
-        }
-        const duration = ((from - to) / l.speed) * 1000
-        const a = el.animate([{ transform: `translate3d(0, ${from}px, 0)` }, { transform: `translate3d(0, ${to}px, 0)` }], {
-          duration,
-          iterations: Infinity,
-          easing: 'linear',
-        })
-        a.currentTime = duration * l.start
-        anims.current.push({ a, boost: 1.5 + l.depth * 3 })
-      })
-    }
-    build()
-    let t = 0
-    const onResize = () => {
-      clearTimeout(t)
-      t = window.setTimeout(build, 200)
-    }
-    window.addEventListener('resize', onResize)
-    return () => {
-      clearTimeout(t)
-      window.removeEventListener('resize', onResize)
-      for (const { a } of anims.current) a.cancel()
-    }
-  }, [lanterns])
-
-  useScrollBoost(anims, 3)
-
-  return (
-    <div className="absolute inset-0">
-      {lanterns.map((l, i) => (
-        <div
-          key={i}
-          ref={(el) => {
-            refs.current[i] = el
-          }}
-          className="absolute top-0 will-change-transform"
-          style={{ left: `${l.left}%`, opacity: l.opacity }}
-        >
-          <div className="lantern" style={{ animationDuration: `${l.bob}s` }}>
-            <span className="lantern-glow" style={{ animationDuration: `${l.flicker}s` }} />
-            <MultiSprite rows={LANTERN} colors={LANTERN_COLORS} scale={l.scale} />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/* ── Birds (day) ──────────────────────────────────────────── */
-
-const BIRD_UP = ['xx.....xx', '..x...x..', '...xxx...', '....x....']
-const BIRD_DOWN = ['....x....', '...xxx...', '..x...x..', '.x.....x.']
-
-/** Day-mode flock: pixel birds flapping across the sky; scrolling makes them fly faster. */
-function Birds({ small }: { small: boolean }) {
-  const refs = useRef<(HTMLDivElement | null)[]>([])
-  const anims = useRef<{ a: Animation; boost: number }[]>([])
-  const count = small ? 3 : 5
-  const birds = useMemo(
-    () =>
-      Array.from({ length: count }, (_, i) => {
-        const depth = rand(i + 301)
-        return {
-          top: 0.1 + rand(i + 321) * 0.42, // fraction of the screen height
-          depth,
-          scale: Math.round(2 + depth * 3),
-          speed: 28 + depth * 40, // px per second while idle
-          start: rand(i + 341),
-          flap: 0.32 + rand(i + 381) * 0.2,
-          bob: 2.5 + rand(i + 361) * 2,
-        }
-      }),
-    [count],
-  )
-
-  useEffect(() => {
-    const build = () => {
-      for (const { a } of anims.current) a.cancel()
-      anims.current = []
-      const w = window.innerWidth
-      birds.forEach((b, i) => {
-        const el = refs.current[i]
-        if (!el) return
-        const from = -80
-        const to = w + 60
-        if (reducedMotion()) {
-          el.style.transform = `translate3d(${(from + (to - from) * b.start).toFixed(0)}px, 0, 0)`
-          return
-        }
-        const duration = ((to - from) / b.speed) * 1000
-        const a = el.animate([{ transform: `translate3d(${from}px, 0, 0)` }, { transform: `translate3d(${to}px, 0, 0)` }], {
-          duration,
-          iterations: Infinity,
-          easing: 'linear',
-        })
-        a.currentTime = duration * b.start
-        anims.current.push({ a, boost: 1 + b.depth * 2 })
-      })
-    }
-    build()
-    let t = 0
-    const onResize = () => {
-      clearTimeout(t)
-      t = window.setTimeout(build, 200)
-    }
-    window.addEventListener('resize', onResize)
-    return () => {
-      clearTimeout(t)
-      window.removeEventListener('resize', onResize)
-      for (const { a } of anims.current) a.cancel()
-    }
-  }, [birds])
-
-  useScrollBoost(anims, 3)
-
-  return (
-    <div className="absolute inset-0">
-      {birds.map((b, i) => (
-        <div
-          key={i}
-          ref={(el) => {
-            refs.current[i] = el
-          }}
-          className="absolute left-0 will-change-transform"
-          style={{ top: `${b.top * 100}%`, opacity: 0.55 + b.depth * 0.4 }}
-        >
-          <span className="bird bird-bob" style={{ '--flap-d': `${b.flap}s`, animationDuration: `${b.bob}s` } as React.CSSProperties}>
-            <PixelSprite rows={BIRD_UP} fill="var(--mtn-3)" className="bird-up block" style={{ width: 9 * b.scale, height: 4 * b.scale }} />
-            <PixelSprite rows={BIRD_DOWN} fill="var(--mtn-3)" className="bird-down absolute left-0 top-0 block" style={{ width: 9 * b.scale, height: 4 * b.scale }} />
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/* ── Fireflies (night) / floating motes (day) ─────────────── */
-
-function Fireflies({ small }: { small: boolean }) {
-  const flies = useMemo(
-    () =>
-      Array.from({ length: small ? 8 : 16 }, (_, i) => ({
-        left: rand(i + 101) * 100,
-        bottom: 6 + rand(i + 121) * 34,
-        dur: 9 + rand(i + 141) * 9,
-        delay: -rand(i + 161) * 12,
-        blink: 2 + rand(i + 181) * 3,
-        dx: Math.round((rand(i + 201) - 0.5) * 120),
-        dy: Math.round(-20 - rand(i + 221) * 70),
+      Array.from({ length: count }, (_, i) => ({
+        left: 8 + rand(i + 21) * 80,
+        top: 0.12 + rand(i + 321) * 0.3,
+        depth: rand(i + 1),
+        start: rand(i + 41),
       })),
-    [small],
+    [count],
   )
-  if (reducedMotion()) return null
+
+  useEffect(() => {
+    if (reducedMotion()) return
+    const anims: Animation[] = []
+    const h = window.innerHeight
+    const w = window.innerWidth
+    items.forEach((it, i) => {
+      const el = refs.current[i]
+      if (!el) return
+      // lanterns rise slowly; birds glide left → right
+      const frames = night
+        ? [{ transform: `translate3d(0, ${h + 40}px, 0)` }, { transform: 'translate3d(0, -120px, 0)' }]
+        : [{ transform: 'translate3d(-80px, 0, 0)' }, { transform: `translate3d(${w + 60}px, 0, 0)` }]
+      const speed = night ? 10 + it.depth * 10 : 22 + it.depth * 22 // px per second
+      const distance = night ? h + 160 : w + 140
+      const duration = (distance / speed) * 1000
+      const a = el.animate(frames, { duration, iterations: Infinity, easing: 'linear' })
+      a.currentTime = duration * it.start
+      anims.push(a)
+    })
+    return () => anims.forEach((a) => a.cancel())
+  }, [items, night])
+
   return (
     <div className="absolute inset-0">
-      {flies.map((f, i) => (
-        <span
-          key={i}
-          className="firefly"
-          style={
-            {
-              left: `${f.left}%`,
-              bottom: `${f.bottom}%`,
-              animationDuration: `${f.dur}s, ${f.blink}s`,
-              animationDelay: `${f.delay}s, ${f.delay / 2}s`,
-              '--fx': `${f.dx}px`,
-              '--fy': `${f.dy}px`,
-            } as React.CSSProperties
-          }
-        />
+      {items.map((it, i) => (
+        <div
+          key={`${night}-${i}`}
+          ref={(el) => {
+            refs.current[i] = el
+          }}
+          className="absolute will-change-transform"
+          style={night ? { left: `${it.left}%`, top: 0, opacity: 0.35 + it.depth * 0.3 } : { left: 0, top: `${it.top * 100}%`, opacity: 0.4 + it.depth * 0.3 }}
+        >
+          {night ? (
+            <div className="lantern" style={{ animationDuration: `${4 + it.depth * 2}s` }}>
+              <span className="lantern-glow" />
+              <MultiSprite rows={LANTERN} colors={LANTERN_COLORS} scale={Math.round(2 + it.depth * 2)} />
+            </div>
+          ) : (
+            <span className="bird bird-bob" style={{ '--flap-d': `${0.4 + it.depth * 0.2}s`, animationDuration: '3s' } as React.CSSProperties}>
+              <PixelSprite rows={BIRD_UP} fill="var(--mtn-3)" className="bird-up block" style={{ width: 9 * (2 + Math.round(it.depth * 2)), height: 4 * (2 + Math.round(it.depth * 2)) }} />
+              <PixelSprite
+                rows={BIRD_DOWN}
+                fill="var(--mtn-3)"
+                className="bird-down absolute left-0 top-0 block"
+                style={{ width: 9 * (2 + Math.round(it.depth * 2)), height: 4 * (2 + Math.round(it.depth * 2)) }}
+              />
+            </span>
+          )}
+        </div>
       ))}
     </div>
   )
-}
-
-/* ── Shooting stars ───────────────────────────────────────── */
-
-function ShootingStars() {
-  const [stars, setStars] = useState<{ id: number; x: number; y: number }[]>([])
-  useEffect(() => {
-    if (reducedMotion()) return
-    let id = 0
-    let t = 0
-    const spawn = () => {
-      const s = { id: ++id, x: 10 + Math.random() * 60, y: 4 + Math.random() * 28 }
-      setStars((cur) => [...cur.slice(-2), s])
-      t = window.setTimeout(spawn, 5000 + Math.random() * 6000)
-    }
-    t = window.setTimeout(spawn, 2500)
-    return () => clearTimeout(t)
-  }, [])
-  return (
-    <>
-      {stars.map((s) => (
-        <span key={s.id} className="meteor" style={{ left: `${s.x}%`, top: `${s.y}%` }} />
-      ))}
-    </>
-  )
-}
-
-/** CSS class for the lantern/bird layer during a Day/Night switch. */
-function flyerMotion(motion: '' | 'c-set' | 'c-rise', night: boolean) {
-  if (motion === 'c-set') return night ? 'lanterns-out' : 'birds-out'
-  if (motion === 'c-rise') return night ? 'lanterns-in' : 'birds-in'
-  return ''
 }
